@@ -1,0 +1,1390 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="theme-color" content="#0a0a0a">
+<meta name="mobile-web-app-capable" content="yes">
+<title>LN Soundbox ⚡</title>
+
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+  tailwind.config = { darkMode: 'class', theme: { extend: { colors: { bitcoin: '#f7931a' } } } }
+</script>
+<script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
+
+<style>
+  * { -webkit-tap-highlight-color: transparent; }
+  body { background: #0a0a0a; overscroll-behavior: none; }
+
+  @keyframes pulseRing {
+    0%   { transform: scale(1);   opacity: 0.7; }
+    100% { transform: scale(2.6); opacity: 0;   }
+  }
+  @keyframes waveBar {
+    0%, 100% { transform: scaleY(0.35); }
+    50%       { transform: scaleY(1);   }
+  }
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(10px); }
+    to   { opacity: 1; transform: translateY(0);    }
+  }
+  @keyframes checkPop {
+    0%  { transform: scale(0); opacity: 0; }
+    70% { transform: scale(1.25); }
+    100%{ transform: scale(1);   opacity: 1; }
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .ring1 { animation: pulseRing 1.8s ease-out infinite; }
+  .ring2 { animation: pulseRing 1.8s ease-out 0.6s infinite; }
+  .ring3 { animation: pulseRing 1.8s ease-out 1.2s infinite; }
+
+  .wbar {
+    display: inline-block; width: 4px; border-radius: 3px;
+    background: #f7931a; transform-origin: bottom;
+    animation: waveBar 0.7s ease-in-out infinite;
+  }
+  .wbar:nth-child(1){animation-delay:.00s;height:14px}
+  .wbar:nth-child(2){animation-delay:.10s;height:20px}
+  .wbar:nth-child(3){animation-delay:.20s;height:26px}
+  .wbar:nth-child(4){animation-delay:.30s;height:20px}
+  .wbar:nth-child(5){animation-delay:.40s;height:14px}
+
+  .screen { display: none; flex-direction: column; min-height: 100dvh; }
+  .screen.active { display: flex; animation: fadeUp 0.22s ease-out; }
+  .card  { background: #111; border: 1px solid #222; }
+
+  .btn-o {
+    background: #f7931a; color: #000; font-weight: 700;
+    transition: filter .15s, transform .1s;
+  }
+  .btn-o:hover   { filter: brightness(1.08); }
+  .btn-o:active  { filter: brightness(.9); transform: scale(.97); }
+  .btn-o:disabled{ filter: brightness(.45); pointer-events: none; }
+
+  .btn-g {
+    background: #181818; border: 1px solid #2c2c2c; color: #888;
+    transition: background .15s, color .15s, border-color .15s;
+  }
+  .btn-g:hover { background: #222; color: #ddd; border-color: #444; }
+
+  input[type=number]::-webkit-inner-spin-button,
+  input[type=number]::-webkit-outer-spin-button { -webkit-appearance: none; }
+  input[type=number] { -moz-appearance: textfield; }
+
+  .fi:focus { outline: none; border-color: #f7931a !important;
+              box-shadow: 0 0 0 2px rgba(247,147,26,.18); }
+
+  #qrcode canvas, #qrcode img,
+  #dqr canvas, #dqr img { border-radius: 8px; display: block; }
+
+  .check-pop { animation: checkPop .4s cubic-bezier(.175,.885,.32,1.275) forwards; }
+  .spin-anim { animation: spin 1s linear infinite; }
+
+  summary { list-style: none; }
+  summary::-webkit-details-marker { display: none; }
+  ::-webkit-scrollbar { width: 3px; }
+  ::-webkit-scrollbar-thumb { background: #2a2a2a; border-radius: 2px; }
+
+  /* mode pill tab */
+  .mpill { padding: .45rem 1.1rem; border-radius: 9999px; font-size:.8rem; font-weight:600; transition: all .15s; }
+  .mpill.on  { background:#f7931a; color:#000; }
+  .mpill.off { color:#555; }
+  .mpill.off:hover { color:#aaa; }
+</style>
+</head>
+<body class="text-white antialiased">
+<div id="app" class="w-full max-w-md mx-auto px-4">
+
+<!-- ═══════════════ HOME ═══════════════ -->
+<div id="screen-home" class="screen active">
+
+  <div class="flex items-center justify-between pt-6 pb-2">
+    <div class="flex items-center gap-2">
+      <span class="text-xl">⚡</span>
+      <span class="font-bold tracking-tight text-lg">LN Soundbox</span>
+    </div>
+    <div class="flex items-center gap-2">
+      <button onclick="showScreen('listen')"
+        class="btn-g text-xs px-3 py-1.5 rounded-full flex items-center gap-1.5">
+        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+            d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-7a3 3 0 01-3-3V5a3 3 0 016 0v6a3 3 0 01-3 3z"/>
+        </svg>
+        Listen
+      </button>
+      <button onclick="showScreen('settings')" class="p-2 text-gray-600 hover:text-gray-300 transition-colors">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8"
+            d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/>
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+        </svg>
+      </button>
+    </div>
+  </div>
+
+  <!-- notice -->
+  <div id="notice-cfg"
+    class="hidden mt-3 mb-1 p-3 rounded-xl bg-amber-950/40 border border-amber-800/40 text-amber-400 text-xs flex items-start gap-2">
+    <span class="mt-0.5">⚠️</span>
+    <span>No payment method set. <button onclick="showScreen('settings')" class="underline font-semibold">Open Settings →</button></span>
+  </div>
+
+  <!-- mode badge -->
+  <div class="flex justify-center mt-5 mb-1">
+    <div id="mode-badge" class="text-xs px-3 py-1 rounded-full bg-gray-900 border border-gray-800 text-gray-600"></div>
+  </div>
+
+  <!-- currency toggle -->
+  <div class="flex justify-center mt-3 mb-5">
+    <div class="flex bg-gray-900 rounded-full p-1 border border-gray-800">
+      <button id="tab-sats" onclick="setCurrency('SATS')"
+        class="px-6 py-2 rounded-full text-sm font-bold transition-all btn-o">SATS</button>
+      <button id="tab-inr" onclick="setCurrency('INR')"
+        class="px-6 py-2 rounded-full text-sm font-semibold transition-all text-gray-500 hover:text-gray-300">INR ₹</button>
+    </div>
+  </div>
+
+  <!-- amount -->
+  <div class="card rounded-2xl p-6 mb-1">
+    <div class="flex flex-col items-center">
+      <div class="flex items-baseline gap-2 w-full justify-center">
+        <span id="csym" class="text-3xl font-light text-gray-700 select-none">₿</span>
+        <input id="amt" type="number" inputmode="decimal" min="1"
+          class="text-6xl font-black bg-transparent text-white text-center w-full outline-none caret-bitcoin placeholder-gray-800"
+          placeholder="0" oninput="onAmtChange()">
+      </div>
+      <div id="clbl" class="text-xs text-gray-600 mt-1 tracking-widest uppercase">sats</div>
+      <div id="conv" class="hidden mt-3 text-sm text-gray-500 bg-gray-900 rounded-lg px-4 py-1.5">
+        <span id="conv-txt"></span>
+      </div>
+    </div>
+  </div>
+  <p class="text-center text-xs text-gray-700 mb-2">Leave blank — payer enters amount when they scan</p>
+
+  <!-- quick amounts -->
+  <div class="grid grid-cols-4 gap-2 mb-3">
+    <button onclick="quickAmt(100)"   class="btn-g py-2.5 rounded-xl text-sm font-medium">100</button>
+    <button onclick="quickAmt(500)"   class="btn-g py-2.5 rounded-xl text-sm font-medium">500</button>
+    <button onclick="quickAmt(1000)"  class="btn-g py-2.5 rounded-xl text-sm font-medium">1K</button>
+    <button onclick="quickAmt(10000)" class="btn-g py-2.5 rounded-xl text-sm font-medium">10K</button>
+  </div>
+
+  <div class="text-center mb-4">
+    <span id="btcprice" class="text-xs text-gray-700">Fetching BTC price…</span>
+  </div>
+
+  <div class="mb-4">
+    <input id="memo" type="text" maxlength="48"
+      class="w-full bg-gray-900 border border-gray-800 rounded-xl px-4 py-3 text-sm fi text-gray-300 placeholder-gray-700 transition-colors"
+      placeholder="Memo (optional)">
+  </div>
+
+  <button id="btn-gen" onclick="generateInvoice()"
+    class="btn-o w-full py-5 rounded-2xl text-xl tracking-tight mb-4">
+    ⚡ Generate Invoice
+  </button>
+
+  <div id="home-err" class="hidden p-4 rounded-xl bg-red-950/40 border border-red-800/40 text-red-400 text-sm mb-4"></div>
+</div><!-- /home -->
+
+
+<!-- ═══════════════ INVOICE ═══════════════ -->
+<div id="screen-invoice" class="screen">
+
+  <div class="flex items-center justify-between pt-6 pb-4">
+    <button onclick="cancelInvoice()" class="flex items-center gap-1 text-gray-500 hover:text-white transition-colors">
+      <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
+      </svg>
+      <span class="text-sm">Back</span>
+    </button>
+    <span id="inv-mode-label" class="text-xs text-gray-600"></span>
+    <div class="w-14"></div>
+  </div>
+
+  <div class="text-center mb-5">
+    <div id="inv-amount-fixed" class="text-4xl font-black">
+      <span id="inv-sats">0</span>
+      <span class="text-2xl font-light text-gray-600 ml-1">sats</span>
+    </div>
+    <div id="inv-amount-open" class="hidden">
+      <span class="text-2xl font-bold text-gray-500">Open Amount</span>
+      <p class="text-xs text-gray-700 mt-1">Payer enters how much to send</p>
+    </div>
+    <div id="inv-inr" class="text-sm text-gray-600 mt-0.5"></div>
+    <div id="inv-addr" class="text-xs text-gray-700 mt-1 font-mono"></div>
+  </div>
+
+  <!-- SUCCESS -->
+  <div id="paid-screen" class="hidden flex-col items-center justify-center py-16">
+    <div class="text-8xl check-pop mb-5">✅</div>
+    <div class="text-3xl font-black text-green-400 mb-2">Paid!</div>
+    <div id="paid-detail" class="text-gray-500 mb-10"></div>
+    <button onclick="newInvoice()" class="btn-o px-10 py-4 rounded-2xl text-lg">New Invoice</button>
+  </div>
+
+  <!-- INVOICE CONTENT -->
+  <div id="inv-content">
+    <!-- QR -->
+    <div class="flex justify-center mb-5">
+      <div class="relative inline-flex items-center justify-center">
+        <div id="rings" class="hidden pointer-events-none absolute inset-0">
+          <div class="absolute inset-0 rounded-2xl border-2 border-bitcoin/25 ring1"></div>
+          <div class="absolute inset-0 rounded-2xl border-2 border-bitcoin/15 ring2"></div>
+          <div class="absolute inset-0 rounded-2xl border-2 border-bitcoin/08 ring3"></div>
+        </div>
+        <div id="qrcode" class="bg-white p-3 rounded-2xl shadow-xl shadow-black/60"></div>
+      </div>
+    </div>
+
+    <!-- audio card -->
+    <div class="card rounded-2xl p-4 mb-3">
+      <div id="bc-idle" class="text-center text-xs text-gray-600">Tap Broadcast — loops silently until stopped</div>
+
+      <div id="bc-active" class="hidden">
+        <div class="flex items-center justify-center gap-3 mb-1">
+          <div class="flex items-end gap-1"><div class="wbar"></div><div class="wbar"></div><div class="wbar"></div><div class="wbar"></div><div class="wbar"></div></div>
+          <span id="bc-active-label" class="text-sm font-bold" style="color:#f7931a">📡 Broadcasting…</span>
+          <div class="flex items-end gap-1"><div class="wbar"></div><div class="wbar"></div><div class="wbar"></div><div class="wbar"></div><div class="wbar"></div></div>
+        </div>
+        <p id="bc-loop-count" class="text-center text-xs text-gray-600"></p>
+      </div>
+
+      <div id="bc-done" class="hidden text-center text-xs text-gray-600">⏹ Broadcast stopped</div>
+      <div id="bc-err"  class="hidden text-center text-xs text-red-500" style="white-space:pre-wrap"></div>
+
+      <div id="bc-payload-wrap" class="hidden mt-3 pt-3 border-t border-gray-800">
+        <p class="text-center text-xs text-gray-700">Payload (<span id="bc-payload-len"></span> chars)</p>
+        <p id="bc-payload" class="text-center text-xs font-mono text-gray-500 mt-0.5 break-all"></p>
+      </div>
+    </div>
+
+    <div class="flex gap-2.5 mb-3">
+      <button id="btn-bc" onclick="toggleBroadcast()" class="btn-o flex-1 py-4 rounded-xl text-sm">📡 Broadcast Loop</button>
+      <button id="btn-proto" onclick="toggleProto()"
+        class="btn-g px-3 py-4 rounded-xl text-xs font-semibold leading-tight text-center">
+        🔇<br>Silent
+      </button>
+    </div>
+
+    <!-- poll -->
+    <div class="card rounded-2xl p-3.5 mb-3 flex items-center gap-3">
+      <div id="poll-spin" class="w-4 h-4 rounded-full border-2 border-bitcoin border-t-transparent spin-anim shrink-0"></div>
+      <span id="poll-txt" class="text-sm text-gray-500 flex-1">Waiting for payment…</span>
+      <span id="poll-timer" class="text-xs text-gray-700 shrink-0"></span>
+    </div>
+
+    <details class="card rounded-2xl mb-8">
+      <summary class="px-4 py-3 text-xs text-gray-600 cursor-pointer hover:text-gray-400 transition-colors flex items-center justify-between">
+        <span>Invoice string (BOLT11)</span><span class="text-gray-800">▾</span>
+      </summary>
+      <div class="px-4 pb-4">
+        <p id="inv-str" class="text-xs text-gray-700 break-all font-mono select-all leading-relaxed"></p>
+        <button onclick="copyInvoice(this)" class="mt-2 text-xs text-bitcoin hover:text-amber-400 transition-colors">Copy</button>
+      </div>
+    </details>
+  </div>
+</div><!-- /invoice -->
+
+
+<!-- ═══════════════ SETTINGS ═══════════════ -->
+<div id="screen-settings" class="screen">
+
+  <div class="flex items-center justify-between pt-6 pb-5">
+    <button onclick="showScreen('home')" class="flex items-center gap-1 text-gray-500 hover:text-white transition-colors">
+      <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
+      </svg>
+      <span class="text-sm">Back</span>
+    </button>
+    <span class="font-bold">Settings</span>
+    <div class="w-14"></div>
+  </div>
+
+  <!-- mode toggle -->
+  <div class="card rounded-2xl p-5 mb-4">
+    <p class="text-xs font-semibold text-gray-600 uppercase tracking-widest mb-3">Payment Mode</p>
+    <div class="flex bg-gray-900 rounded-full p-1 border border-gray-800 mb-5">
+      <button id="mode-lnbits" onclick="setMode('lnbits')" class="mpill flex-1 text-center on">LNbits Node</button>
+      <button id="mode-lnaddr" onclick="setMode('lnaddr')" class="mpill flex-1 text-center off">⚡ Lightning Address</button>
+    </div>
+
+    <!-- LNbits fields -->
+    <div id="lnbits-fields" class="space-y-3">
+      <div>
+        <label class="block text-xs text-gray-500 mb-1.5">LNbits URL</label>
+        <input id="s-url" type="url"
+          class="w-full bg-gray-900 border border-gray-800 rounded-xl px-4 py-3 text-sm fi text-white placeholder-gray-700 transition-colors"
+          placeholder="https://legend.lnbits.com">
+      </div>
+      <div>
+        <label class="block text-xs text-gray-500 mb-1.5">Invoice / Read Key</label>
+        <div class="relative">
+          <input id="s-key" type="password"
+            class="w-full bg-gray-900 border border-gray-800 rounded-xl px-4 py-3 pr-14 text-sm fi text-white placeholder-gray-700 font-mono transition-colors"
+            placeholder="Paste invoice key">
+          <button onclick="toggleKey()" class="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-gray-600 hover:text-gray-400">show</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- LN Address fields -->
+    <div id="lnaddr-fields" class="hidden space-y-3">
+      <div>
+        <label class="block text-xs text-gray-500 mb-1.5">Your Lightning Address</label>
+        <input id="s-lnaddr" type="email"
+          class="w-full bg-gray-900 border border-gray-800 rounded-xl px-4 py-3 text-sm fi text-white placeholder-gray-700 font-mono transition-colors"
+          placeholder="you@walletofsatoshi.com">
+        <p class="text-xs text-gray-700 mt-1.5 leading-relaxed">
+          Works with Wallet of Satoshi, Strike, Alby, Blink, ZBD, Primal, and any LNURL-pay wallet.
+          Known domains are compressed to single letters when broadcast — so "alice@walletofsatoshi.com"
+          transmits as "alice@W" (10 chars vs 30).
+        </p>
+      </div>
+
+      <!-- domain code table -->
+      <details class="bg-gray-900 rounded-xl">
+        <summary class="px-4 py-2.5 text-xs text-gray-600 cursor-pointer hover:text-gray-400 flex items-center justify-between">
+          <span>Domain code table</span><span class="text-gray-700">▾</span>
+        </summary>
+        <div class="px-4 pb-3">
+          <div id="domain-table" class="grid grid-cols-2 gap-x-4 gap-y-1 text-xs text-gray-600 mt-2"></div>
+        </div>
+      </details>
+    </div>
+  </div>
+
+  <div id="s-result" class="hidden p-3 rounded-xl text-sm mb-4"></div>
+
+  <div class="flex gap-3 mb-4">
+    <button onclick="testConn()"   class="btn-g flex-1 py-3.5 rounded-xl text-sm font-medium">Test</button>
+    <button onclick="saveSettings()" class="btn-o flex-1 py-3.5 rounded-xl text-sm">Save</button>
+  </div>
+
+  <div class="card rounded-2xl p-5 mb-4">
+    <p class="text-xs font-semibold text-gray-600 uppercase tracking-widest mb-3">Audio Protocol</p>
+    <div class="flex bg-gray-900 rounded-full p-1 border border-gray-800 mb-3">
+      <button id="proto-silent"  onclick="setProto('ultrasonic')"
+        class="mpill flex-1 text-center on">🔇 Silent (ultrasonic)</button>
+      <button id="proto-audible" onclick="setProto('audible')"
+        class="mpill flex-1 text-center off">🔊 Audible</button>
+    </div>
+    <p class="text-xs text-gray-700 leading-relaxed">
+      <strong class="text-gray-500">Silent:</strong> uses ~18–22 kHz — inaudible to most adults, captured fine by phone mics. Best for merchant use.<br>
+      <strong class="text-gray-500">Audible:</strong> standard tones, easier to debug. Use if silent mode isn't working on older phones.
+    </p>
+  </div>
+
+  <div class="card rounded-2xl p-5 mb-4">
+    <p class="text-xs font-semibold text-gray-600 uppercase tracking-widest mb-3">How audio works</p>
+    <div class="space-y-2 text-xs text-gray-700 leading-relaxed">
+      <p>Broadcast <strong class="text-gray-500">loops continuously</strong> with a short gap between cycles — the listener can tune in at any point and decode the next full packet.</p>
+      <p><span class="text-gray-500 font-medium">Lightning Address mode</span> transmits ~12–20 chars. <span class="text-gray-500 font-medium">LNbits mode</span> transmits the full BOLT11 (~300+ chars, may not fit in one GGWave packet).</p>
+    </div>
+  </div>
+
+  <button onclick="clearSettings()" class="w-full py-3 text-xs text-red-900 hover:text-red-500 transition-colors">
+    Clear saved settings
+  </button>
+</div><!-- /settings -->
+
+
+<!-- ═══════════════ LISTEN ═══════════════ -->
+<div id="screen-listen" class="screen">
+
+  <div class="flex items-center justify-between pt-6 pb-4">
+    <button onclick="stopListening(); showScreen('home')" class="flex items-center gap-1 text-gray-500 hover:text-white transition-colors">
+      <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
+      </svg>
+      <span class="text-sm">Back</span>
+    </button>
+    <span class="font-bold">Listen Mode</span>
+    <div class="w-14"></div>
+  </div>
+
+  <div class="flex-1 flex flex-col items-center justify-start py-4">
+
+    <!-- idle -->
+    <div id="listen-idle" class="flex flex-col items-center text-center max-w-xs">
+      <div class="w-20 h-20 rounded-full bg-gray-900 border border-gray-800 flex items-center justify-center text-4xl mb-5">🎤</div>
+      <p class="text-sm text-gray-500 leading-relaxed mb-2">
+        Receive Lightning invoices broadcast over audio from another LN Soundbox device.
+      </p>
+      <p class="text-xs text-gray-700 leading-relaxed mb-8">
+        Supports both full BOLT11 invoices and compressed Lightning Address tokens.
+        Decoding is automatic.
+      </p>
+      <button onclick="startListening()" class="btn-o w-full py-4 rounded-2xl text-base">
+        Start Listening
+      </button>
+    </div>
+
+    <!-- active -->
+    <div id="listen-active" class="hidden flex-col items-center text-center w-full">
+      <div class="relative w-24 h-24 mb-5">
+        <div class="w-24 h-24 rounded-full bg-gray-900 border-2 border-bitcoin/60 flex items-center justify-center text-4xl">🎤</div>
+        <div class="absolute inset-0 rounded-full border-2 border-bitcoin/30 ring1"></div>
+        <div class="absolute inset-0 rounded-full border-2 border-bitcoin/15 ring2"></div>
+      </div>
+      <div class="flex items-center gap-2 mb-1">
+        <div class="flex items-end gap-1 h-5">
+          <div class="wbar" style="height:9px"></div>
+          <div class="wbar" style="height:13px"></div>
+          <div class="wbar" style="height:17px"></div>
+          <div class="wbar" style="height:13px"></div>
+          <div class="wbar" style="height:9px"></div>
+        </div>
+        <span class="text-sm text-bitcoin font-bold">Listening…</span>
+      </div>
+      <button onclick="stopListening()" class="text-xs text-gray-700 hover:text-red-500 transition-colors mb-6 py-2 px-4">
+        Stop
+      </button>
+
+      <!-- decoded result -->
+      <div id="dec-wrap" class="hidden w-full card rounded-2xl p-5">
+        <div id="dec-type" class="text-xs text-gray-600 text-center mb-3"></div>
+
+        <!-- amount entry (open-amount LNADDR) -->
+        <div id="dec-amt-entry" class="hidden">
+          <p class="text-xs text-gray-500 text-center mb-3">Enter how much you want to pay</p>
+          <div class="flex items-baseline justify-center gap-2 mb-3">
+            <span class="text-2xl text-gray-700">₿</span>
+            <input id="dec-amt-input" type="number" inputmode="decimal" min="1"
+              class="text-4xl font-black bg-transparent text-white text-center w-40 outline-none caret-bitcoin placeholder-gray-800"
+              placeholder="0">
+            <span class="text-base text-gray-600">sats</span>
+          </div>
+          <div class="grid grid-cols-4 gap-1.5 mb-3">
+            <button onclick="setDecAmt(100)"   class="btn-g py-2 rounded-lg text-xs">100</button>
+            <button onclick="setDecAmt(500)"   class="btn-g py-2 rounded-lg text-xs">500</button>
+            <button onclick="setDecAmt(1000)"  class="btn-g py-2 rounded-lg text-xs">1K</button>
+            <button onclick="setDecAmt(10000)" class="btn-g py-2 rounded-lg text-xs">10K</button>
+          </div>
+          <button onclick="fetchDecodedInvoice()" class="btn-o w-full py-3 rounded-xl text-sm font-bold">
+            Get Invoice →
+          </button>
+        </div>
+
+        <!-- fetching state -->
+        <div id="dec-fetching" class="hidden text-center text-xs text-gray-500 py-4">
+          <div class="w-5 h-5 rounded-full border-2 border-bitcoin border-t-transparent spin-anim mx-auto mb-2"></div>
+          Fetching invoice from Lightning Address…
+        </div>
+
+        <div id="dec-qr-wrap" class="hidden">
+          <div class="flex justify-center mb-3">
+            <div id="dqr" class="bg-white p-2.5 rounded-xl"></div>
+          </div>
+          <p id="dec-addr-display" class="text-xs text-gray-500 text-center font-mono mb-1"></p>
+          <p id="dec-str" class="text-xs text-gray-700 break-all font-mono text-center select-all leading-relaxed mb-4"></p>
+          <button onclick="openWallet()" class="btn-o w-full py-3.5 rounded-xl text-base font-bold mb-2">
+            ⚡ Open in Wallet
+          </button>
+          <button onclick="copyDecoded(this)" class="btn-g w-full py-2.5 rounded-xl text-sm">Copy invoice</button>
+        </div>
+
+        <div id="dec-err" class="hidden text-xs text-red-400 text-center py-2"></div>
+      </div>
+    </div>
+
+    <div id="listen-err" class="hidden mt-4 p-4 rounded-xl bg-red-950/40 border border-red-800/40 text-red-400 text-sm text-center w-full"></div>
+  </div>
+</div><!-- /listen -->
+
+</div><!-- /app -->
+
+<script>
+// ═══════════════════════════════════════════════════════
+//  DOMAIN COMPRESSION TABLE
+//  Both sender and receiver embed the same table.
+//  Single uppercase letter → full domain.
+// ═══════════════════════════════════════════════════════
+const DC = {
+  W: 'walletofsatoshi.com',
+  S: 'strike.me',
+  A: 'getalby.com',
+  B: 'blink.sv',
+  Z: 'zbd.gg',
+  P: 'primal.net',
+  M: 'minibits.cash',
+  N: 'stacker.news',
+  L: 'ln.tips',
+  C: 'coinos.io',
+  T: 'lightsats.com',
+  Y: 'coincorner.io',
+  X: 'btcpay.server',   // placeholder — user can customise
+};
+// reverse: domain → code
+const DC_REV = Object.fromEntries(Object.entries(DC).map(([k,v]) => [v,k]));
+
+function compressAddr(addr) {
+  const at = addr.lastIndexOf('@');
+  if (at < 0) return addr;
+  const user   = addr.slice(0, at);
+  const domain = addr.slice(at + 1);
+  const code   = DC_REV[domain];
+  return code ? `${user}@${code}` : addr;
+}
+
+function expandAddr(compressed) {
+  const at = compressed.lastIndexOf('@');
+  if (at < 0) return compressed;
+  const user      = compressed.slice(0, at);
+  const domOrCode = compressed.slice(at + 1);
+  const domain    = DC[domOrCode] || domOrCode;
+  return `${user}@${domain}`;
+}
+
+// Transmitted format (compact — no prefix, just the address):
+//   With amount:    "alice@W 1000"   ← 12 chars  (was 19)
+//   Without amount: "alice@W"        ←  7 chars  (was 14)
+
+function encodeLNADDR(addr, sats) {
+  const base = compressAddr(addr);
+  return (sats != null) ? `${base} ${sats}` : base;
+}
+
+function decodeLNADDR(msg) {
+  const t = msg.trim();
+  // compact: "user@DOM sats" or "user@DOM"
+  const m = t.match(/^(\S+@\S+)\s+(\d+)$/);
+  if (m) return { addr: expandAddr(m[1]), sats: parseInt(m[2], 10) };
+  const m2 = t.match(/^(\S+@\S+)$/);
+  if (m2 && !t.toLowerCase().startsWith('ln'))
+    return { addr: expandAddr(m2[1]), sats: null };
+  // legacy "LNADDR ..." prefix still accepted
+  const m3 = t.match(/^LNADDR\s+(\S+@\S+)(?:\s+(\d+))?$/i);
+  if (m3) return { addr: expandAddr(m3[1]), sats: m3[2] ? parseInt(m3[2], 10) : null };
+  return null;
+}
+
+// ═══════════════════════════════════════════════════════
+//  LNURL BECH32 ENCODER
+//  Converts a Lightning Address to a scannable LNURL1... string.
+//  Wallets decode this back to the URL and call it for LNURL-pay.
+// ═══════════════════════════════════════════════════════
+const _B32C = 'qpzry9x8gf2tvdw0s3jn54khce6mua7l';
+const _B32G = [0x3b6a57b2, 0x26508e6d, 0x1ea119fa, 0x3d4233dd, 0x2a1462b3];
+
+function _b32Polymod(v) {
+  let c = 1;
+  for (const b of v) {
+    const t = c >> 25;
+    c = (c & 0x1ffffff) << 5 ^ b;
+    for (let i = 0; i < 5; i++) c ^= ((t >> i) & 1) ? _B32G[i] : 0;
+  }
+  return c;
+}
+function _b32HrpExpand(h) {
+  const r = [];
+  for (const c of h) r.push(c.charCodeAt(0) >> 5);
+  r.push(0);
+  for (const c of h) r.push(c.charCodeAt(0) & 31);
+  return r;
+}
+function _b32Checksum(hrp, data) {
+  const poly = _b32Polymod(_b32HrpExpand(hrp).concat(data, [0,0,0,0,0,0])) ^ 1;
+  return [0,1,2,3,4,5].map(i => (poly >> (5 * (5 - i))) & 31);
+}
+function _b32Encode(hrp, bytes) {
+  // bytes → 5-bit groups
+  const d5 = []; let acc = 0, bits = 0;
+  for (const b of bytes) {
+    acc = (acc << 8) | b; bits += 8;
+    while (bits >= 5) { bits -= 5; d5.push((acc >> bits) & 31); }
+  }
+  if (bits) d5.push((acc << (5 - bits)) & 31);
+  return hrp + '1' + d5.concat(_b32Checksum(hrp, d5)).map(x => _B32C[x]).join('');
+}
+
+function lnAddrToLNURL(addr) {
+  const [user, domain] = addr.split('@');
+  const url   = `https://${domain}/.well-known/lnurlp/${user}`;
+  const bytes = Array.from(new TextEncoder().encode(url));
+  return _b32Encode('lnurl', bytes).toUpperCase();  // LNURL1...
+}
+
+// ═══════════════════════════════════════════════════════
+//  STATE
+// ═══════════════════════════════════════════════════════
+const S = {
+  screen:    'home',
+  mode:      'lnbits',    // 'lnbits' | 'lnaddr'
+  currency:  'SATS',
+  btcINR:    null,
+  settings:  { url: '', key: '', lnaddr: '' },
+  invoice:   null,        // { hash, bolt11, sats, addr? }
+  paid:      false,
+  lastWave:    null,
+  lastPayload: '',
+  looping:     false,     // broadcast loop active
+  loopCount:   0,         // how many times transmitted
+  currentSrc:  null,      // current AudioBufferSource (for stopping mid-play)
+  proto:       'ultrasonic', // 'ultrasonic' | 'audible'
+  pollTimer: null,
+  pollSecs:  0,
+  gg: { lib: null, inst: null, ctx: null },
+  listenStream: null, listenSource: null, listenProcessor: null,
+  listening: false,
+  decodedBolt11: '',
+};
+
+// ═══════════════════════════════════════════════════════
+//  BOOT
+// ═══════════════════════════════════════════════════════
+async function init() {
+  renderDomainTable();
+  loadSettings();
+  updateModeBadge();
+  checkNotice();
+  fetchBtcPrice();
+  // Pre-load ggwave JS in background so it's ready when user taps Broadcast
+  setTimeout(() => _loadGGWave().catch(() => {}), 1000);
+}
+
+function renderDomainTable() {
+  const el = document.getElementById('domain-table');
+  Object.entries(DC).forEach(([code, domain]) => {
+    el.innerHTML += `<div><span class="text-bitcoin font-mono">${code}</span> = ${domain}</div>`;
+  });
+}
+
+function loadSettings() {
+  try {
+    const raw = localStorage.getItem('lnsb2');
+    if (raw) {
+      const saved = JSON.parse(raw);
+      Object.assign(S.settings, saved);
+      document.getElementById('s-url').value    = saved.url    || '';
+      document.getElementById('s-key').value    = saved.key    || '';
+      document.getElementById('s-lnaddr').value = saved.lnaddr || '';
+      if (saved.mode) { S.mode = saved.mode; applyModeUI(saved.mode); }
+      if (saved.proto) setProto(saved.proto);
+    }
+  } catch (_) {}
+}
+
+function checkNotice() {
+  const ok = S.mode === 'lnbits'
+    ? (S.settings.url && S.settings.key)
+    : S.settings.lnaddr;
+  document.getElementById('notice-cfg').classList.toggle('hidden', !!ok);
+}
+
+function updateModeBadge() {
+  const el = document.getElementById('mode-badge');
+  if (S.mode === 'lnaddr' && S.settings.lnaddr) {
+    const comp = compressAddr(S.settings.lnaddr);
+    el.textContent = `⚡ ${S.settings.lnaddr} (broadcasts as "${comp} <sats>")`;
+  } else if (S.mode === 'lnbits' && S.settings.url) {
+    el.textContent = `🔌 LNbits: ${new URL(S.settings.url).hostname}`;
+  } else {
+    el.textContent = 'No payment method configured';
+  }
+}
+
+// ═══════════════════════════════════════════════════════
+//  NAVIGATION
+// ═══════════════════════════════════════════════════════
+function showScreen(name) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById('screen-' + name).classList.add('active');
+  S.screen = name;
+}
+
+// ═══════════════════════════════════════════════════════
+//  SETTINGS / MODE
+// ═══════════════════════════════════════════════════════
+function setMode(m) {
+  S.mode = m;
+  applyModeUI(m);
+}
+
+function applyModeUI(m) {
+  document.getElementById('mode-lnbits').className   = 'mpill flex-1 text-center ' + (m === 'lnbits' ? 'on' : 'off');
+  document.getElementById('mode-lnaddr').className   = 'mpill flex-1 text-center ' + (m === 'lnaddr' ? 'on' : 'off');
+  document.getElementById('lnbits-fields').classList.toggle('hidden', m !== 'lnbits');
+  document.getElementById('lnaddr-fields').classList.toggle('hidden', m !== 'lnaddr');
+}
+
+function saveSettings() {
+  S.settings.url    = document.getElementById('s-url').value.trim();
+  S.settings.key    = document.getElementById('s-key').value.trim();
+  S.settings.lnaddr = document.getElementById('s-lnaddr').value.trim().toLowerCase();
+  S.settings.mode   = S.mode;
+  S.settings.proto  = S.proto;
+  localStorage.setItem('lnsb2', JSON.stringify(S.settings));
+  updateModeBadge();
+  checkNotice();
+  setResult('success', '✓ Saved');
+  setTimeout(() => showScreen('home'), 700);
+}
+
+function clearSettings() {
+  if (!confirm('Clear all saved settings?')) return;
+  localStorage.removeItem('lnsb2');
+  S.settings = { url: '', key: '', lnaddr: '' };
+  ['s-url','s-key','s-lnaddr'].forEach(id => document.getElementById(id).value = '');
+  updateModeBadge(); checkNotice();
+  setResult('neutral', 'Settings cleared');
+}
+
+function toggleKey() {
+  const k = document.getElementById('s-key');
+  k.type = k.type === 'password' ? 'text' : 'password';
+}
+
+async function testConn() {
+  if (S.mode === 'lnbits') {
+    const url = document.getElementById('s-url').value.trim();
+    const key = document.getElementById('s-key').value.trim();
+    if (!url || !key) { setResult('err', 'Fill in URL and key.'); return; }
+    setResult('neutral', '⏳ Testing…');
+    try {
+      const r = await fetch(url.replace(/\/+$/, '') + '/api/v1/wallet',
+        { headers: { 'X-Api-Key': key }, signal: AbortSignal.timeout(8000) });
+      if (!r.ok) throw new Error(`HTTP ${r.status}`);
+      const d = await r.json();
+      setResult('success', `✓ Connected — "${d.name}" (${Math.round((d.balance||0)/1000).toLocaleString()} sats)`);
+    } catch (e) { setResult('err', 'Cannot reach LNbits: ' + e.message); }
+  } else {
+    const addr = document.getElementById('s-lnaddr').value.trim();
+    if (!addr || !addr.includes('@')) { setResult('err', 'Enter a valid Lightning Address.'); return; }
+    setResult('neutral', '⏳ Testing…');
+    try {
+      await fetchLNAddrMeta(addr);
+      setResult('success', `✓ Lightning Address is reachable`);
+    } catch (e) { setResult('err', 'Cannot reach address: ' + e.message); }
+  }
+}
+
+function setResult(type, msg) {
+  const el = document.getElementById('s-result');
+  el.className = 'p-3 rounded-xl text-sm mb-4 border';
+  if (type === 'success') el.className += ' bg-green-950/40 border-green-800/40 text-green-400';
+  else if (type === 'err') el.className += ' bg-red-950/40 border-red-800/40 text-red-400';
+  else el.className += ' bg-gray-900 border-gray-800 text-gray-500';
+  el.textContent = msg;
+  el.classList.remove('hidden');
+}
+
+// ═══════════════════════════════════════════════════════
+//  CURRENCY / AMOUNT
+// ═══════════════════════════════════════════════════════
+function setCurrency(c) {
+  S.currency = c;
+  const isSats = c === 'SATS';
+  document.getElementById('csym').textContent = isSats ? '₿' : '₹';
+  document.getElementById('clbl').textContent = isSats ? 'sats' : 'INR';
+  const on  = 'px-6 py-2 rounded-full text-sm font-bold transition-all btn-o';
+  const off = 'px-6 py-2 rounded-full text-sm font-semibold transition-all text-gray-500 hover:text-gray-300';
+  document.getElementById('tab-sats').className = isSats ? on : off;
+  document.getElementById('tab-inr').className  = isSats ? off : on;
+  onAmtChange();
+}
+
+function quickAmt(sats) {
+  let v = sats;
+  if (S.currency === 'INR' && S.btcINR) v = Math.ceil((sats / 1e8) * S.btcINR);
+  document.getElementById('amt').value = v;
+  onAmtChange();
+}
+
+function onAmtChange() {
+  const raw  = parseFloat(document.getElementById('amt').value);
+  const wrap = document.getElementById('conv');
+  const txt  = document.getElementById('conv-txt');
+  if (!raw || raw <= 0) { wrap.classList.add('hidden'); return; }
+  wrap.classList.remove('hidden');
+  if (S.currency === 'SATS' && S.btcINR) {
+    txt.textContent = `≈ ₹${((raw / 1e8) * S.btcINR).toLocaleString('en-IN', { maximumFractionDigits: 2 })}`;
+  } else if (S.currency === 'INR' && S.btcINR) {
+    txt.textContent = `≈ ${inrToSats(raw).toLocaleString()} sats`;
+  } else {
+    wrap.classList.add('hidden');
+  }
+}
+
+function inrToSats(inr) { return Math.round((inr / S.btcINR) * 1e8); }
+
+function getSats() {
+  const raw = parseFloat(document.getElementById('amt').value);
+  if (!raw || raw < 1) return null;
+  return S.currency === 'SATS' ? Math.round(raw) : (S.btcINR ? inrToSats(raw) : null);
+}
+
+// ═══════════════════════════════════════════════════════
+//  BTC PRICE
+// ═══════════════════════════════════════════════════════
+async function fetchBtcPrice() {
+  try {
+    const r = await fetch(
+      'https://api.coingecko.com/api/v3/simple/price?ids=bitcoin&vs_currencies=inr',
+      { signal: AbortSignal.timeout(8000) });
+    S.btcINR = (await r.json()).bitcoin.inr;
+    document.getElementById('btcprice').textContent =
+      `1 BTC = ${S.btcINR.toLocaleString('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 })}`;
+    onAmtChange();
+  } catch (_) {
+    document.getElementById('btcprice').textContent = 'BTC price unavailable — INR conversion disabled';
+  }
+}
+
+// ═══════════════════════════════════════════════════════
+//  LNBITS API
+// ═══════════════════════════════════════════════════════
+function lnHdr() { return { 'X-Api-Key': S.settings.key, 'Content-Type': 'application/json' }; }
+
+async function lnbitsCreate(sats, memo) {
+  const url = S.settings.url.replace(/\/+$/, '') + '/api/v1/payments';
+  const r = await fetch(url, {
+    method: 'POST', headers: lnHdr(),
+    body: JSON.stringify({ out: false, amount: sats, memo: memo || 'LN Soundbox' }),
+    signal: AbortSignal.timeout(15000),
+  });
+  if (!r.ok) { const e = await r.json().catch(()=>({})); throw new Error(e.detail || `HTTP ${r.status}`); }
+  return r.json();
+}
+
+async function lnbitsCheck(hash) {
+  const r = await fetch(
+    S.settings.url.replace(/\/+$/, '') + '/api/v1/payments/' + hash,
+    { headers: lnHdr(), signal: AbortSignal.timeout(10000) });
+  if (!r.ok) throw new Error(`HTTP ${r.status}`);
+  return r.json();
+}
+
+// ═══════════════════════════════════════════════════════
+//  LNURL-PAY (Lightning Address)
+// ═══════════════════════════════════════════════════════
+async function fetchLNAddrMeta(addr) {
+  const [user, domain] = addr.split('@');
+  const r = await fetch(`https://${domain}/.well-known/lnurlp/${user}`,
+    { signal: AbortSignal.timeout(10000) });
+  if (!r.ok) throw new Error(`HTTP ${r.status}`);
+  const d = await r.json();
+  if (d.status === 'ERROR') throw new Error(d.reason);
+  return d;
+}
+
+async function fetchLNAddrInvoice(addr, sats) {
+  const meta = await fetchLNAddrMeta(addr);
+  const msat = sats * 1000;
+  if (msat < meta.minSendable) throw new Error(`Minimum is ${Math.ceil(meta.minSendable/1000)} sats`);
+  if (msat > meta.maxSendable) throw new Error(`Maximum is ${Math.floor(meta.maxSendable/1000)} sats`);
+  const cb = new URL(meta.callback);
+  cb.searchParams.set('amount', msat);
+  const r2 = await fetch(cb.toString(), { signal: AbortSignal.timeout(10000) });
+  if (!r2.ok) throw new Error(`Callback HTTP ${r2.status}`);
+  const d2 = await r2.json();
+  if (d2.status === 'ERROR') throw new Error(d2.reason);
+  if (!d2.pr) throw new Error('No invoice in response');
+  return d2.pr; // BOLT11
+}
+
+// ═══════════════════════════════════════════════════════
+//  GENERATE INVOICE
+// ═══════════════════════════════════════════════════════
+async function generateInvoice() {
+  clearErr('home-err');
+  const sats = getSats(); // null = open amount
+
+  if (S.mode === 'lnbits' && (!S.settings.url || !S.settings.key))
+    { showErr('home-err', 'Configure LNbits in Settings.'); return; }
+  if (S.mode === 'lnaddr' && !S.settings.lnaddr)
+    { showErr('home-err', 'Configure your Lightning Address in Settings.'); return; }
+
+  // LNbits requires an amount; lnaddr can be open
+  if (S.mode === 'lnbits' && !sats)
+    { showErr('home-err', 'LNbits requires an amount. Switch to Lightning Address mode for open-amount invoices.'); return; }
+
+  const btn = document.getElementById('btn-gen');
+  btn.textContent = '⏳ Creating…'; btn.disabled = true;
+
+  try {
+    const memo = document.getElementById('memo').value.trim();
+    let bolt11 = null, hash = null;
+
+    if (S.mode === 'lnbits') {
+      const d = await lnbitsCreate(sats, memo);
+      bolt11 = d.payment_request;
+      hash   = d.payment_hash;
+    } else if (sats) {
+      // LN Address with fixed amount — fetch invoice now
+      bolt11 = await fetchLNAddrInvoice(S.settings.lnaddr, sats);
+      hash   = '__lnaddr__' + Date.now();
+    }
+    // else: open-amount lnaddr — bolt11 stays null; we just broadcast the address
+
+    S.invoice = { hash, bolt11, sats, addr: S.settings.lnaddr || null };
+    S.paid = false; S.lastWave = null; S.lastPayload = '';
+
+    renderInvoiceScreen();
+    showScreen('invoice');
+    await ensureAudio();
+    broadcastInvoice();
+    if (bolt11) startPoll();
+  } catch (e) {
+    showErr('home-err', e.message);
+  } finally {
+    btn.textContent = '⚡ Generate Invoice'; btn.disabled = false;
+  }
+}
+
+function renderInvoiceScreen() {
+  const inv = S.invoice;
+  const hasAmt = inv.sats != null;
+
+  // Amount display
+  document.getElementById('inv-amount-fixed').classList.toggle('hidden', !hasAmt);
+  document.getElementById('inv-amount-open').classList.toggle('hidden', hasAmt);
+  if (hasAmt) {
+    document.getElementById('inv-sats').textContent = inv.sats.toLocaleString();
+    if (S.btcINR)
+      document.getElementById('inv-inr').textContent =
+        `≈ ₹${((inv.sats / 1e8) * S.btcINR).toLocaleString('en-IN', { maximumFractionDigits: 2 })}`;
+  } else {
+    document.getElementById('inv-inr').textContent = '';
+  }
+
+  document.getElementById('inv-addr').textContent = inv.addr || '';
+  document.getElementById('inv-mode-label').textContent =
+    S.mode === 'lnaddr' ? '⚡ Lightning Address' : '🔌 LNbits';
+
+  document.getElementById('paid-screen').classList.add('hidden');
+  document.getElementById('paid-screen').classList.remove('flex');
+  document.getElementById('inv-content').classList.remove('hidden');
+  document.getElementById('poll-txt').textContent =
+    inv.bolt11 ? 'Waiting for payment…' : 'Broadcast sent — payer will enter amount';
+  document.getElementById('poll-timer').textContent = '';
+  document.getElementById('bc-payload-wrap').classList.add('hidden');
+  setBcState('idle');
+
+  // QR: if we have a bolt11 show it; for open-amount show a placeholder message
+  const qrEl = document.getElementById('qrcode');
+  qrEl.innerHTML = '';
+  if (inv.bolt11) {
+    const sz = Math.min(268, window.innerWidth - 80);
+    new QRCode(qrEl, {
+      text: inv.bolt11.toUpperCase(), width: sz, height: sz,
+      colorDark: '#000000', colorLight: '#ffffff',
+      correctLevel: QRCode.CorrectLevel.L,
+    });
+    document.getElementById('inv-str').textContent = inv.bolt11;
+  } else {
+    // Open-amount: encode address as proper LNURL bech32 so any wallet can scan it
+    const lnurl = lnAddrToLNURL(inv.addr);
+    const sz = Math.min(268, window.innerWidth - 80);
+    new QRCode(qrEl, {
+      text: lnurl, width: sz, height: sz,
+      colorDark: '#000000', colorLight: '#ffffff',
+      correctLevel: QRCode.CorrectLevel.L,
+    });
+    document.getElementById('inv-str').textContent = inv.addr + '\n' + lnurl;
+  }
+}
+
+function cancelInvoice() { stopBroadcast(); stopPoll(); showScreen('home'); }
+function newInvoice()     { stopBroadcast(); stopPoll(); S.invoice = null; S.paid = false; S.lastWave = null; setBcState('idle'); showScreen('home'); }
+
+// ═══════════════════════════════════════════════════════
+//  GGWAVE
+// ═══════════════════════════════════════════════════════
+async function _loadGGWave() {
+  if (S.gg.lib) return;
+  // Load from local copy (faster, no CDN dependency, correct version)
+  await new Promise((resolve, reject) => {
+    if (typeof window.ggwave_factory === 'function') { resolve(); return; }
+    if (document.querySelector('script[data-gg]')) { resolve(); return; }
+    const s = document.createElement('script');
+    s.src = './lib/ggwave.js';
+    s.dataset.gg = '1';
+    s.onload  = resolve;
+    s.onerror = () => reject(new Error('Failed to load local ggwave library. Is npx serve running?'));
+    document.head.appendChild(s);
+  });
+  if (typeof window.ggwave_factory !== 'function')
+    throw new Error('ggwave_factory not defined after script load.');
+  S.gg.lib = await window.ggwave_factory();
+  S.gg.lib.disableLog();
+  console.log('ggwave ready ✓  protocols:', S.gg.lib.ProtocolId);
+}
+
+async function ensureAudio() {
+  if (!S.gg.ctx) S.gg.ctx = new (window.AudioContext || window.webkitAudioContext)({ sampleRate: 48000 });
+  if (S.gg.ctx.state === 'suspended') await S.gg.ctx.resume();
+  await _loadGGWave();
+  if (!S.gg.inst) {
+    const p = S.gg.lib.getDefaultParameters();
+    p.sampleRateInp = S.gg.ctx.sampleRate;
+    p.sampleRateOut = S.gg.ctx.sampleRate;
+    // Lower detection threshold → more sensitive to weak ultrasonic signals
+    p.soundMarkerThreshold = 3;
+    p.operatingMode = S.gg.lib.GGWAVE_OPERATING_MODE_RX_AND_TX;
+    S.gg.inst = S.gg.lib.init(p);
+  }
+}
+
+// Returns the GGWave protocol ID based on current S.proto setting.
+// FASTEST variants transmit in ~half the time of NORMAL.
+// Fallback IDs: audible 0-2, ultrasound 9-11 (varies by ggwave version — logged at init).
+// GGWave protocol IDs (0.4.x confirmed):
+//   0 AUDIBLE_NORMAL  1 AUDIBLE_FAST  2 AUDIBLE_FASTEST
+//   3 ULTRASOUND_NORMAL  4 ULTRASOUND_FAST  5 ULTRASOUND_FASTEST
+function getProtoId() {
+  const P = S.gg.lib.ProtocolId;
+  if (S.proto === 'ultrasonic')
+    return P?.GGWAVE_PROTOCOL_ULTRASOUND_FASTEST ?? 5;
+  return P?.GGWAVE_PROTOCOL_AUDIBLE_FASTEST ?? 2;
+}
+
+function stopBroadcast() {
+  S.looping = false;
+  if (S.currentSrc) { try { S.currentSrc.stop(); } catch (_) {} S.currentSrc = null; }
+  document.getElementById('rings').classList.add('hidden');
+  setBcState('done');
+  document.getElementById('btn-bc').textContent = '📡 Broadcast Loop';
+}
+
+// Called automatically on invoice generation — encodes once then loops
+async function broadcastInvoice() {
+  if (!S.invoice || S.looping) return;
+  S.looping = true; S.loopCount = 0;
+  document.getElementById('btn-bc').textContent = '⏹ Stop';
+  setBcState('active');
+  try {
+    await ensureAudio();
+    const payload = S.mode === 'lnaddr'
+      ? encodeLNADDR(S.invoice.addr, S.invoice.sats)
+      : S.invoice.bolt11;
+    // Volume 50 for ultrasonic (inaudible anyway, but phone mics need a stronger signal)
+    const vol = S.proto === 'ultrasonic' ? 50 : 15;
+    const wave = S.gg.lib.encode(S.gg.inst, payload, getProtoId(), vol);
+    if (!wave || wave.length === 0) {
+      throw new Error(
+        S.mode === 'lnbits'
+          ? `Invoice too long for audio (${S.invoice.bolt11.length} chars). Switch to Lightning Address mode.`
+          : 'Encoding failed — payload too long.'
+      );
+    }
+    S.lastWave = wave; S.lastPayload = payload;
+    showPayloadInfo(payload);
+    while (S.looping) {
+      await playWave(wave);
+      if (!S.looping) break;
+      S.loopCount++;
+      document.getElementById('bc-loop-count').textContent =
+        `Cycle ${S.loopCount} — listener can join any time`;
+      await new Promise(r => setTimeout(r, 300));
+    }
+  } catch (e) {
+    S.looping = false;
+    setBcState('err', e.message);
+    document.getElementById('btn-bc').textContent = '📡 Broadcast Loop';
+    return;
+  }
+  document.getElementById('btn-bc').textContent = '📡 Broadcast Loop';
+}
+
+// Button handler — starts loop if stopped, stops if running
+function toggleBroadcast() {
+  if (S.looping) { stopBroadcast(); return; }
+  broadcastInvoice();
+}
+
+function toggleProto() { setProto(S.proto === 'ultrasonic' ? 'audible' : 'ultrasonic'); }
+
+function setProto(p) {
+  S.proto = p;
+  document.getElementById('proto-silent').className  = 'mpill flex-1 text-center ' + (p === 'ultrasonic' ? 'on' : 'off');
+  document.getElementById('proto-audible').className = 'mpill flex-1 text-center ' + (p === 'audible'    ? 'on' : 'off');
+  const btn = document.getElementById('btn-proto');
+  if (btn) btn.innerHTML = p === 'ultrasonic' ? '🔇<br>Silent' : '🔊<br>Loud';
+  // If actively looping, restart with new protocol
+  if (S.looping) { stopBroadcast(); setTimeout(() => broadcastInvoice(), 100); }
+}
+
+function playWave(wave) {
+  return new Promise(resolve => {
+    const ctx = S.gg.ctx;
+    // encode() returns a typed array whose underlying bytes are float32 samples.
+    // We must reinterpret those bytes as Float32Array, NOT cast element-by-element.
+    const floatWave = new Float32Array(wave.buffer, wave.byteOffset, wave.byteLength / 4);
+    const buf = ctx.createBuffer(1, floatWave.length, ctx.sampleRate);
+    buf.getChannelData(0).set(floatWave);
+    const src = ctx.createBufferSource();
+    src.buffer = buf;
+    S.currentSrc = src;
+
+    // Ultrasonic mode: chain a steep highpass filter at 17 kHz.
+    // This physically removes all audible-range components (including GGWave's
+    // preamble tones) before they reach the speaker — truly inaudible output.
+    if (S.proto === 'ultrasonic') {
+      const hpf = ctx.createBiquadFilter();
+      hpf.type = 'highpass';
+      hpf.frequency.value = 17000;
+      hpf.Q.value = 1.4; // steeper roll-off
+      src.connect(hpf);
+      hpf.connect(ctx.destination);
+    } else {
+      src.connect(ctx.destination);
+    }
+
+    src.onended = () => {
+      S.currentSrc = null;
+      document.getElementById('rings').classList.add('hidden');
+      resolve();
+    };
+    document.getElementById('rings').classList.remove('hidden');
+    src.start(0);
+  });
+}
+
+function showPayloadInfo(payload) {
+  document.getElementById('bc-payload').textContent = payload;
+  document.getElementById('bc-payload-len').textContent = payload.length;
+  document.getElementById('bc-payload-wrap').classList.remove('hidden');
+}
+
+function setBcState(s, msg) {
+  ['bc-idle','bc-active','bc-done','bc-err'].forEach(id => document.getElementById(id).classList.add('hidden'));
+  if (s === 'idle')   document.getElementById('bc-idle').classList.remove('hidden');
+  if (s === 'active') document.getElementById('bc-active').classList.remove('hidden');
+  if (s === 'done')   document.getElementById('bc-done').classList.remove('hidden');
+  if (s === 'err') {
+    const el = document.getElementById('bc-err');
+    el.style.whiteSpace = 'pre-wrap';
+    el.textContent = '⚠️ ' + (msg || 'Audio error');
+    el.classList.remove('hidden');
+    console.error('[LN Soundbox] Audio error:', msg);
+  }
+}
+
+// ═══════════════════════════════════════════════════════
+//  SUCCESS SOUND
+// ═══════════════════════════════════════════════════════
+function playSuccess() {
+  const ctx = S.gg.ctx; if (!ctx) return;
+  [523.25, 659.25, 783.99, 1046.5].forEach((f, i) => {
+    const osc = ctx.createOscillator(), gain = ctx.createGain();
+    const t = ctx.currentTime + i * 0.13;
+    osc.type = 'sine'; osc.frequency.value = f;
+    gain.gain.setValueAtTime(0, t);
+    gain.gain.linearRampToValueAtTime(0.25, t + 0.04);
+    gain.gain.exponentialRampToValueAtTime(0.0001, t + 0.5);
+    osc.connect(gain); gain.connect(ctx.destination);
+    osc.start(t); osc.stop(t + 0.6);
+  });
+}
+
+// ═══════════════════════════════════════════════════════
+//  PAYMENT POLLING
+// ═══════════════════════════════════════════════════════
+function startPoll() {
+  stopPoll(); S.pollSecs = 0;
+  S.pollTimer = setInterval(async () => {
+    S.pollSecs++;
+    document.getElementById('poll-timer').textContent = S.pollSecs + 's';
+    if (S.mode === 'lnbits') {
+      try {
+        const d = await lnbitsCheck(S.invoice.hash);
+        if (d.paid) { stopPoll(); onPaid(); }
+      } catch (_) {}
+    }
+    // lnaddr mode: no direct polling API available from browser;
+    // user sees the QR and can confirm manually — payment success via wallet notification
+  }, 2000);
+}
+
+function stopPoll() { clearInterval(S.pollTimer); S.pollTimer = null; }
+
+function onPaid() {
+  S.paid = true;
+  document.getElementById('inv-content').classList.add('hidden');
+  const ps = document.getElementById('paid-screen');
+  ps.classList.remove('hidden'); ps.classList.add('flex');
+  document.getElementById('paid-detail').textContent = `${S.invoice.sats.toLocaleString()} sats ⚡`;
+  playSuccess();
+}
+
+// ═══════════════════════════════════════════════════════
+//  LISTEN MODE
+// ═══════════════════════════════════════════════════════
+async function startListening() {
+  document.getElementById('listen-err').classList.add('hidden');
+  try {
+    await ensureAudio();
+    // Disable all browser audio processing — AGC and noise suppression will
+    // destroy ultrasonic signals before GGWave ever sees them.
+    const stream = await navigator.mediaDevices.getUserMedia({
+      audio: {
+        echoCancellation:   false,
+        autoGainControl:    false,
+        noiseSuppression:   false,
+        channelCount:       1,
+        sampleRate:         48000,
+      },
+      video: false,
+    });
+    S.listenStream = stream;
+    const src  = S.gg.ctx.createMediaStreamSource(stream);
+    const proc = S.gg.ctx.createScriptProcessor(1024, 1, 1);
+    S.listenSource = src; S.listenProcessor = proc;
+
+    proc.onaudioprocess = (e) => {
+      if (!S.listening) return;
+      try {
+        const res = S.gg.lib.decode(S.gg.inst, typedView(new Float32Array(e.inputBuffer.getChannelData(0)), Int8Array));
+        if (res && res.length > 0) {
+          const text = new TextDecoder().decode(res).trim();
+          if (text) onDecoded(text);
+        }
+      } catch (_) {}
+    };
+
+    src.connect(proc);
+    proc.connect(S.gg.ctx.destination);
+    S.listening = true;
+
+    document.getElementById('listen-idle').classList.add('hidden');
+    document.getElementById('listen-active').classList.remove('hidden');
+    document.getElementById('listen-active').classList.add('flex');
+    document.getElementById('dec-wrap').classList.add('hidden');
+  } catch (e) {
+    const el = document.getElementById('listen-err');
+    el.classList.remove('hidden');
+    el.textContent = e.name === 'NotAllowedError'
+      ? 'Microphone access denied. Allow mic access in browser settings.'
+      : 'Error: ' + e.message;
+  }
+}
+
+function stopListening() {
+  S.listening = false;
+  if (S.listenProcessor) { S.listenProcessor.disconnect(); S.listenProcessor = null; }
+  if (S.listenSource)    { S.listenSource.disconnect();    S.listenSource    = null; }
+  if (S.listenStream)    { S.listenStream.getTracks().forEach(t => t.stop()); S.listenStream = null; }
+  document.getElementById('listen-idle').classList.remove('hidden');
+  document.getElementById('listen-active').classList.add('hidden');
+  document.getElementById('listen-active').classList.remove('flex');
+}
+
+function openLightningURI(uri) {
+  // Works on Android; iOS may need the button fallback
+  const a = document.createElement('a');
+  a.href = uri; a.style.display = 'none';
+  document.body.appendChild(a); a.click();
+  setTimeout(() => document.body.removeChild(a), 200);
+}
+
+async function onDecoded(text) {
+  // Stop listening immediately — prevents re-detecting the same looping signal
+  stopListening();
+
+  const wrap   = document.getElementById('dec-wrap');
+  const fetch_ = document.getElementById('dec-fetching');
+  const qrw    = document.getElementById('dec-qr-wrap');
+  const typeEl = document.getElementById('dec-type');
+  const errEl  = document.getElementById('dec-err');
+
+  wrap.classList.remove('hidden');
+  [qrw, fetch_, errEl].forEach(el => el.classList.add('hidden'));
+  // Hide old amount-entry UI (no longer needed — wallet handles it)
+  document.getElementById('dec-amt-entry').classList.add('hidden');
+
+  // ── LNADDR token ──────────────────────────────────────
+  const lnaddr = decodeLNADDR(text);
+  if (lnaddr) {
+    if (lnaddr.sats != null) {
+      // Fixed amount: fetch BOLT11 → open wallet
+      typeEl.textContent = `⚡ ${lnaddr.addr} — ${lnaddr.sats.toLocaleString()} sats`;
+      fetch_.classList.remove('hidden');
+      try {
+        const bolt11 = await fetchLNAddrInvoice(lnaddr.addr, lnaddr.sats);
+        S.decodedBolt11 = bolt11;
+        fetch_.classList.add('hidden');
+        document.getElementById('dec-addr-display').textContent =
+          `${lnaddr.addr} → ${lnaddr.sats.toLocaleString()} sats`;
+        renderDecodedQR(bolt11);
+        openLightningURI('lightning:' + bolt11);
+      } catch (e) {
+        fetch_.classList.add('hidden');
+        errEl.textContent = 'Could not fetch invoice: ' + e.message;
+        errEl.classList.remove('hidden');
+      }
+    } else {
+      // Open amount: convert to LNURL → wallet handles amount entry
+      const lnurl = lnAddrToLNURL(lnaddr.addr);
+      S.decodedBolt11 = lnurl;
+      typeEl.textContent = `⚡ ${lnaddr.addr}`;
+      document.getElementById('dec-addr-display').textContent = lnaddr.addr;
+      renderDecodedQR(lnurl);
+      openLightningURI('lightning:' + lnurl);
+    }
+    return;
+  }
+
+  // ── Raw BOLT11 ────────────────────────────────────────
+  if (text.toLowerCase().startsWith('ln')) {
+    typeEl.textContent = '📄 Invoice received';
+    document.getElementById('dec-addr-display').textContent = '';
+    S.decodedBolt11 = text;
+    renderDecodedQR(text);
+    openLightningURI('lightning:' + text);
+    return;
+  }
+
+  // Unknown payload
+  typeEl.textContent = '⚠️ Unrecognised payload';
+  document.getElementById('dec-str').textContent = text;
+  qrw.classList.remove('hidden');
+}
+
+function renderDecodedQR(bolt11) {
+  const qrw = document.getElementById('dec-qr-wrap');
+  const el  = document.getElementById('dqr');
+  el.innerHTML = '';
+  new QRCode(el, {
+    text: bolt11.toUpperCase(), width: 200, height: 200,
+    colorDark: '#000000', colorLight: '#ffffff',
+    correctLevel: QRCode.CorrectLevel.L,
+  });
+  document.getElementById('dec-str').textContent = bolt11;
+  qrw.classList.remove('hidden');
+}
+
+function typedView(src, Type) {
+  const b = new ArrayBuffer(src.byteLength);
+  new src.constructor(b).set(src);
+  return new Type(b);
+}
+
+// ═══════════════════════════════════════════════════════
+//  UTILS
+// ═══════════════════════════════════════════════════════
+function showErr(id, msg) { const e = document.getElementById(id); e.textContent = msg; e.classList.remove('hidden'); }
+function clearErr(id)     { document.getElementById(id).classList.add('hidden'); }
+
+function copyInvoice(btn) {
+  navigator.clipboard.writeText(S.invoice?.bolt11 || '').then(() => {
+    btn.textContent = 'Copied!'; setTimeout(() => btn.textContent = 'Copy', 1500);
+  });
+}
+
+function copyDecoded(btn) {
+  navigator.clipboard.writeText(S.decodedBolt11).then(() => {
+    btn.textContent = 'Copied!'; setTimeout(() => btn.textContent = 'Copy', 1500);
+  });
+}
+
+function openWallet() {
+  if (S.decodedBolt11) openLightningURI('lightning:' + S.decodedBolt11);
+}
+
+document.addEventListener('DOMContentLoaded', init);
+</script>
+</body>
+</html>

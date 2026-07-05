@@ -1,0 +1,2 @@
+Place upi.wav here (downloaded from the UPI Soundbox website).
+Then use Tools → ESP32 LittleFS Data Upload in Arduino IDE to flash it.

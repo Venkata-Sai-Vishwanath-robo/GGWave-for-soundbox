@@ -1,0 +1,981 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="theme-color" content="#0a0a0a">
+<meta name="mobile-web-app-capable" content="yes">
+<title>UPI Soundbox 🔊</title>
+
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+  tailwind.config = { darkMode: 'class', theme: { extend: { colors: { upi: '#5f259f' } } } }
+</script>
+<script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
+
+<style>
+  * { -webkit-tap-highlight-color: transparent; }
+  body { background: #0a0a0a; overscroll-behavior: none; }
+
+  @keyframes pulseRing {
+    0%   { transform: scale(1);   opacity: 0.7; }
+    100% { transform: scale(2.6); opacity: 0;   }
+  }
+  @keyframes waveBar {
+    0%, 100% { transform: scaleY(0.35); }
+    50%       { transform: scaleY(1);   }
+  }
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(10px); }
+    to   { opacity: 1; transform: translateY(0);    }
+  }
+  @keyframes checkPop {
+    0%  { transform: scale(0); opacity: 0; }
+    70% { transform: scale(1.25); }
+    100%{ transform: scale(1);   opacity: 1; }
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* UPI accent colour: indigo/purple */
+  :root { --upi: #7c3aed; --upi-light: #8b5cf6; }
+
+  .ring1 { animation: pulseRing 1.8s ease-out infinite; }
+  .ring2 { animation: pulseRing 1.8s ease-out 0.6s infinite; }
+  .ring3 { animation: pulseRing 1.8s ease-out 1.2s infinite; }
+
+  .wbar {
+    display: inline-block; width: 4px; border-radius: 3px;
+    background: var(--upi-light); transform-origin: bottom;
+    animation: waveBar 0.7s ease-in-out infinite;
+  }
+  .wbar:nth-child(1){animation-delay:.00s;height:14px}
+  .wbar:nth-child(2){animation-delay:.10s;height:20px}
+  .wbar:nth-child(3){animation-delay:.20s;height:26px}
+  .wbar:nth-child(4){animation-delay:.30s;height:20px}
+  .wbar:nth-child(5){animation-delay:.40s;height:14px}
+
+  .screen { display: none; flex-direction: column; min-height: 100dvh; }
+  .screen.active { display: flex; animation: fadeUp 0.22s ease-out; }
+  .card  { background: #111; border: 1px solid #222; }
+
+  .btn-p {
+    background: var(--upi); color: #fff; font-weight: 700;
+    transition: filter .15s, transform .1s;
+  }
+  .btn-p:hover   { filter: brightness(1.12); }
+  .btn-p:active  { filter: brightness(.88); transform: scale(.97); }
+  .btn-p:disabled{ filter: brightness(.4); pointer-events: none; }
+
+  .btn-g {
+    background: #181818; border: 1px solid #2c2c2c; color: #888;
+    transition: background .15s, color .15s, border-color .15s;
+  }
+  .btn-g:hover { background: #222; color: #ddd; border-color: #444; }
+
+  .fi:focus { outline: none; border-color: var(--upi) !important;
+              box-shadow: 0 0 0 2px rgba(124,58,237,.18); }
+
+  #qrcode canvas, #qrcode img,
+  #dqr canvas, #dqr img { border-radius: 8px; display: block; }
+
+  .check-pop { animation: checkPop .4s cubic-bezier(.175,.885,.32,1.275) forwards; }
+  .spin-anim { animation: spin 1s linear infinite; }
+
+  summary { list-style: none; }
+  summary::-webkit-details-marker { display: none; }
+  ::-webkit-scrollbar { width: 3px; }
+  ::-webkit-scrollbar-thumb { background: #2a2a2a; border-radius: 2px; }
+
+  .mpill { padding: .45rem 1.1rem; border-radius: 9999px; font-size:.8rem; font-weight:600; transition: all .15s; }
+  .mpill.on  { background: var(--upi); color: #fff; }
+  .mpill.off { color:#555; }
+  .mpill.off:hover { color:#aaa; }
+
+  .upi-accent { color: var(--upi-light); }
+</style>
+</head>
+<body class="text-white antialiased">
+<div id="app" class="w-full max-w-md mx-auto px-4">
+
+
+<!-- ═══════════════ HOME ═══════════════ -->
+<div id="screen-home" class="screen active">
+
+  <div class="flex items-center justify-between pt-6 pb-2">
+    <div class="flex items-center gap-2">
+      <span class="text-xl">🔊</span>
+      <span class="font-bold tracking-tight text-lg">UPI Soundbox</span>
+    </div>
+    <div class="flex items-center gap-2">
+      <button onclick="showScreen('listen')"
+        class="btn-g text-xs px-3 py-1.5 rounded-full flex items-center gap-1.5">
+        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+            d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-7a3 3 0 01-3-3V5a3 3 0 016 0v6a3 3 0 01-3 3z"/>
+        </svg>
+        Listen
+      </button>
+      <button onclick="showScreen('settings')" class="p-2 text-gray-600 hover:text-gray-300 transition-colors">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8"
+            d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/>
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+        </svg>
+      </button>
+    </div>
+  </div>
+
+  <div id="notice-cfg"
+    class="hidden mt-3 mb-1 p-3 rounded-xl bg-amber-950/40 border border-amber-800/40 text-amber-400 text-xs flex items-start gap-2">
+    <span class="mt-0.5">⚠️</span>
+    <span>No UPI ID configured. <button onclick="showScreen('settings')" class="underline font-semibold">Open Settings →</button></span>
+  </div>
+
+  <div class="flex justify-center mt-5 mb-5">
+    <div id="upi-badge" class="text-xs px-3 py-1 rounded-full bg-gray-900 border border-gray-800 text-gray-600 font-mono"></div>
+  </div>
+
+  <div class="card rounded-2xl p-6 mb-4">
+    <p class="text-xs font-semibold text-gray-600 uppercase tracking-widest mb-3">UPI ID</p>
+    <input id="home-upi" type="email" inputmode="email" autocomplete="off" spellcheck="false"
+      class="w-full bg-gray-900 border border-gray-800 rounded-xl px-4 py-3 text-lg fi text-white placeholder-gray-700 font-mono transition-colors"
+      placeholder="yourname@okaxis"
+      oninput="onUpiInput()">
+    <p id="home-upi-hint" class="text-xs text-gray-700 mt-2 leading-relaxed"></p>
+  </div>
+
+  <button id="btn-broadcast" onclick="startBroadcast()"
+    class="btn-p w-full py-5 rounded-2xl text-xl tracking-tight mb-4">
+    📡 Broadcast UPI
+  </button>
+
+  <div id="home-err" class="hidden p-4 rounded-xl bg-red-950/40 border border-red-800/40 text-red-400 text-sm mb-4"></div>
+</div><!-- /home -->
+
+
+<!-- ═══════════════ BROADCAST ═══════════════ -->
+<div id="screen-broadcast" class="screen">
+
+  <div class="flex items-center justify-between pt-6 pb-4">
+    <button onclick="cancelBroadcast()" class="flex items-center gap-1 text-gray-500 hover:text-white transition-colors">
+      <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
+      </svg>
+      <span class="text-sm">Back</span>
+    </button>
+    <span class="text-xs text-gray-600 font-mono" id="bc-upi-label"></span>
+    <div class="w-14"></div>
+  </div>
+
+  <!-- QR -->
+  <div class="flex justify-center mb-5">
+    <div class="relative inline-flex items-center justify-center">
+      <div id="rings" class="hidden pointer-events-none absolute inset-0">
+        <div class="absolute inset-0 rounded-2xl border-2 border-purple-500/25 ring1"></div>
+        <div class="absolute inset-0 rounded-2xl border-2 border-purple-500/15 ring2"></div>
+        <div class="absolute inset-0 rounded-2xl border-2 border-purple-500/08 ring3"></div>
+      </div>
+      <div id="qrcode" class="bg-white p-3 rounded-2xl shadow-xl shadow-black/60"></div>
+    </div>
+  </div>
+
+  <!-- audio card -->
+  <div class="card rounded-2xl p-4 mb-3">
+    <div id="bc-idle" class="text-center text-xs text-gray-600">Tap Broadcast — loops silently until stopped</div>
+    <div id="bc-active" class="hidden">
+      <div class="flex items-center justify-center gap-3 mb-1">
+        <div class="flex items-end gap-1">
+          <div class="wbar"></div><div class="wbar"></div><div class="wbar"></div><div class="wbar"></div><div class="wbar"></div>
+        </div>
+        <span class="text-sm font-bold upi-accent">📡 Broadcasting…</span>
+        <div class="flex items-end gap-1">
+          <div class="wbar"></div><div class="wbar"></div><div class="wbar"></div><div class="wbar"></div><div class="wbar"></div>
+        </div>
+      </div>
+      <p id="bc-loop-count" class="text-center text-xs text-gray-600"></p>
+    </div>
+    <div id="bc-done" class="hidden text-center text-xs text-gray-600">⏹ Broadcast stopped</div>
+    <div id="bc-err"  class="hidden text-center text-xs text-red-500" style="white-space:pre-wrap"></div>
+
+    <div id="bc-payload-wrap" class="hidden mt-3 pt-3 border-t border-gray-800">
+      <p class="text-center text-xs text-gray-700">Payload (<span id="bc-payload-len"></span> chars)</p>
+      <p id="bc-payload" class="text-center text-xs font-mono text-gray-500 mt-0.5 break-all"></p>
+    </div>
+  </div>
+
+  <!-- buttons row -->
+  <div class="flex gap-2.5 mb-3">
+    <button id="btn-bc" onclick="toggleBroadcast()" class="btn-p flex-1 py-4 rounded-xl text-sm">📡 Broadcast Loop</button>
+    <button id="btn-proto" onclick="toggleProto()"
+      class="btn-g px-3 py-4 rounded-xl text-xs font-semibold leading-tight text-center">
+      🔇<br>Silent
+    </button>
+  </div>
+
+  <!-- ESP32 download button -->
+  <div class="card rounded-2xl p-4 mb-3">
+    <p class="text-xs font-semibold text-gray-600 uppercase tracking-widest mb-2">ESP32 (no SD card needed)</p>
+    <p class="text-xs text-gray-700 leading-relaxed mb-3">
+      Download the audio as <span class="font-mono text-gray-500">upi.wav</span>, place it in the
+      <span class="font-mono text-gray-500">esp32/upi_soundbox/data/</span> folder, then use
+      <span class="font-mono text-gray-500">Tools → ESP32 LittleFS Data Upload</span> in Arduino IDE
+      to flash it. The sketch plays from internal flash — no SD card required.
+    </p>
+    <button id="btn-dl" onclick="downloadWav()"
+      class="btn-g w-full py-3 rounded-xl text-sm font-semibold flex items-center justify-center gap-2">
+      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+          d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/>
+      </svg>
+      Download WAV for SD Card
+    </button>
+    <p id="dl-status" class="hidden text-xs text-center mt-2"></p>
+  </div>
+
+  <details class="card rounded-2xl mb-8">
+    <summary class="px-4 py-3 text-xs text-gray-600 cursor-pointer hover:text-gray-400 transition-colors flex items-center justify-between">
+      <span>Full UPI deep-link</span><span class="text-gray-800">▾</span>
+    </summary>
+    <div class="px-4 pb-4">
+      <p id="upi-deeplink-str" class="text-xs text-gray-700 break-all font-mono select-all leading-relaxed"></p>
+      <button onclick="copyDeeplink(this)" class="mt-2 text-xs upi-accent hover:opacity-80 transition-opacity">Copy</button>
+    </div>
+  </details>
+</div><!-- /broadcast -->
+
+
+<!-- ═══════════════ SETTINGS ═══════════════ -->
+<div id="screen-settings" class="screen">
+
+  <div class="flex items-center justify-between pt-6 pb-5">
+    <button onclick="showScreen('home')" class="flex items-center gap-1 text-gray-500 hover:text-white transition-colors">
+      <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
+      </svg>
+      <span class="text-sm">Back</span>
+    </button>
+    <span class="font-bold">Settings</span>
+    <div class="w-14"></div>
+  </div>
+
+  <div class="card rounded-2xl p-5 mb-4">
+    <p class="text-xs font-semibold text-gray-600 uppercase tracking-widest mb-3">Your UPI ID</p>
+    <input id="s-upi" type="email" autocomplete="off" spellcheck="false"
+      class="w-full bg-gray-900 border border-gray-800 rounded-xl px-4 py-3 text-sm fi text-white placeholder-gray-700 font-mono transition-colors"
+      placeholder="yourname@okaxis">
+    <p class="text-xs text-gray-700 mt-2 leading-relaxed">
+      Common handles are compressed to a single letter when broadcast — so
+      <span class="font-mono text-gray-500">merchant@okaxis</span> transmits as
+      <span class="font-mono text-gray-500">merchant@A</span>.
+      The full ID is restored on the receiver's device.
+    </p>
+
+    <details class="bg-gray-900 rounded-xl mt-3">
+      <summary class="px-4 py-2.5 text-xs text-gray-600 cursor-pointer hover:text-gray-400 flex items-center justify-between">
+        <span>Handle compression table</span><span class="text-gray-700">▾</span>
+      </summary>
+      <div class="px-4 pb-3">
+        <div id="handle-table" class="grid grid-cols-2 gap-x-4 gap-y-1 text-xs text-gray-600 mt-2"></div>
+      </div>
+    </details>
+  </div>
+
+  <div id="s-result" class="hidden p-3 rounded-xl text-sm mb-4"></div>
+
+  <button onclick="saveSettings()" class="btn-p w-full py-3.5 rounded-xl text-sm mb-4">Save</button>
+
+  <div class="card rounded-2xl p-5 mb-4">
+    <p class="text-xs font-semibold text-gray-600 uppercase tracking-widest mb-3">Audio Protocol</p>
+    <div class="flex bg-gray-900 rounded-full p-1 border border-gray-800 mb-3">
+      <button id="proto-silent"  onclick="setProto('audible')"
+        class="mpill flex-1 text-center on">🔊 Audible</button>
+      <button id="proto-audible" onclick="setProto('ultrasonic')"
+        class="mpill flex-1 text-center off">🔇 Silent</button>
+    </div>
+    <p class="text-xs text-gray-700 leading-relaxed">
+      <strong class="text-gray-500">Audible (default for ESP32):</strong> standard tones — more reliable through physical speakers at distance.<br>
+      <strong class="text-gray-500">Silent (ultrasonic):</strong> 18–22 kHz, inaudible. Use when broadcasting directly from a phone browser.
+    </p>
+  </div>
+
+  <div class="card rounded-2xl p-5 mb-4">
+    <p class="text-xs font-semibold text-gray-600 uppercase tracking-widest mb-3">How it works</p>
+    <div class="space-y-2 text-xs text-gray-700 leading-relaxed">
+      <p>The UPI ID is encoded as FSK audio tones using <strong class="text-gray-500">ggwave</strong>. A compressed UPI ID (~10 chars) fits in a single fast packet.</p>
+      <p>For <strong class="text-gray-500">ESP32 deployment</strong>: download <span class="font-mono">upi.wav</span> from the broadcast screen, place it in <span class="font-mono">data/</span> next to the sketch, run <span class="font-mono">LittleFS Data Upload</span>, then flash the sketch. No SD card needed — audio lives in ESP32 internal flash.</p>
+      <p>For <strong class="text-gray-500">phone-to-phone</strong>: open this page on the merchant phone, tap Broadcast. Customer opens the same page, taps Listen.</p>
+    </div>
+  </div>
+
+  <button onclick="clearSettings()" class="w-full py-3 text-xs text-red-900 hover:text-red-500 transition-colors">
+    Clear saved settings
+  </button>
+</div><!-- /settings -->
+
+
+<!-- ═══════════════ LISTEN ═══════════════ -->
+<div id="screen-listen" class="screen">
+
+  <div class="flex items-center justify-between pt-6 pb-4">
+    <button onclick="stopListening(); showScreen('home')" class="flex items-center gap-1 text-gray-500 hover:text-white transition-colors">
+      <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
+      </svg>
+      <span class="text-sm">Back</span>
+    </button>
+    <span class="font-bold">Listen Mode</span>
+    <div class="w-14"></div>
+  </div>
+
+  <div class="flex-1 flex flex-col items-center justify-start py-4">
+
+    <div id="listen-idle" class="flex flex-col items-center text-center max-w-xs">
+      <div class="w-20 h-20 rounded-full bg-gray-900 border border-gray-800 flex items-center justify-center text-4xl mb-5">🎤</div>
+      <p class="text-sm text-gray-500 leading-relaxed mb-2">
+        Receive a UPI ID broadcast over audio — from an ESP32 / DFPlayer speaker or another phone running this app.
+      </p>
+      <p class="text-xs text-gray-700 leading-relaxed mb-8">
+        Point your phone mic towards the speaker. Decoding is automatic.
+      </p>
+      <button onclick="startListening()" class="btn-p w-full py-4 rounded-2xl text-base">
+        Start Listening
+      </button>
+    </div>
+
+    <div id="listen-active" class="hidden flex-col items-center text-center w-full">
+      <div class="relative w-24 h-24 mb-5">
+        <div class="w-24 h-24 rounded-full bg-gray-900 border-2 border-purple-500/60 flex items-center justify-center text-4xl">🎤</div>
+        <div class="absolute inset-0 rounded-full border-2 border-purple-500/30 ring1"></div>
+        <div class="absolute inset-0 rounded-full border-2 border-purple-500/15 ring2"></div>
+      </div>
+      <div class="flex items-center gap-2 mb-1">
+        <div class="flex items-end gap-1 h-5">
+          <div class="wbar" style="height:9px"></div>
+          <div class="wbar" style="height:13px"></div>
+          <div class="wbar" style="height:17px"></div>
+          <div class="wbar" style="height:13px"></div>
+          <div class="wbar" style="height:9px"></div>
+        </div>
+        <span class="text-sm upi-accent font-bold">Listening…</span>
+      </div>
+      <button onclick="stopListening()" class="text-xs text-gray-700 hover:text-red-500 transition-colors mb-6 py-2 px-4">
+        Stop
+      </button>
+
+      <div id="dec-wrap" class="hidden w-full card rounded-2xl p-5">
+        <div id="dec-type" class="text-xs text-gray-600 text-center mb-3"></div>
+
+        <div id="dec-qr-wrap" class="hidden">
+          <div class="flex justify-center mb-3">
+            <div id="dqr" class="bg-white p-2.5 rounded-xl"></div>
+          </div>
+          <p id="dec-upi-display" class="text-base font-mono text-center text-white mb-1"></p>
+          <p id="dec-upi-link"    class="text-xs text-gray-700 break-all font-mono text-center select-all leading-relaxed mb-4"></p>
+          <button onclick="openUPI()" class="btn-p w-full py-3.5 rounded-xl text-base font-bold mb-2">
+            💸 Open in UPI App
+          </button>
+          <button onclick="copyDecoded(this)" class="btn-g w-full py-2.5 rounded-xl text-sm">Copy UPI ID</button>
+        </div>
+
+        <div id="dec-err" class="hidden text-xs text-red-400 text-center py-2"></div>
+      </div>
+    </div>
+
+    <div id="listen-err" class="hidden mt-4 p-4 rounded-xl bg-red-950/40 border border-red-800/40 text-red-400 text-sm text-center w-full"></div>
+  </div>
+</div><!-- /listen -->
+
+
+</div><!-- /app -->
+
+<script>
+// ═══════════════════════════════════════════════════════
+//  UPI HANDLE COMPRESSION TABLE
+//  Single uppercase letter → full handle suffix (without @).
+//  Same table on sender and receiver.
+// ═══════════════════════════════════════════════════════
+const HC = {
+  A: 'okaxis',
+  Y: 'ybl',          // PhonePe
+  S: 'oksbi',
+  P: 'paytm',
+  I: 'okicici',
+  U: 'upi',
+  L: 'apl',          // Amazon Pay
+  X: 'axl',          // Axis Bank direct
+  H: 'okhdfcbank',
+  M: 'ibl',          // ICICI Bank direct
+  B: 'barodampay',
+  N: 'naviaxis',
+  T: 'postbank',
+  K: 'ikwik',        // Airtel Payments Bank
+};
+const HC_REV = Object.fromEntries(Object.entries(HC).map(([k,v]) => [v,k]));
+
+function compressUPI(id) {
+  const at = id.lastIndexOf('@');
+  if (at < 0) return id;
+  const user   = id.slice(0, at);
+  const handle = id.slice(at + 1).toLowerCase();
+  const code   = HC_REV[handle];
+  return code ? `${user}@${code}` : id;
+}
+
+function expandUPI(compressed) {
+  const at = compressed.lastIndexOf('@');
+  if (at < 0) return compressed;
+  const user      = compressed.slice(0, at);
+  const part      = compressed.slice(at + 1);
+  const handle    = HC[part] || part;  // if single uppercase letter → expand, else keep
+  return `${user}@${handle}`;
+}
+
+function upiDeepLink(id) {
+  return `upi://pay?pa=${encodeURIComponent(id)}&pn=UPI+Soundbox&cu=INR`;
+}
+
+// ═══════════════════════════════════════════════════════
+//  STATE
+// ═══════════════════════════════════════════════════════
+const S = {
+  screen:      'home',
+  upiId:       '',           // current UPI ID being broadcast
+  settings:    { upi: '', proto: 'audible' },
+  proto:       'audible',    // 'audible' | 'ultrasonic' — audible default for speaker
+  looping:     false,
+  loopCount:   0,
+  currentSrc:  null,
+  lastWave:    null,
+  lastPayload: '',
+  gg: { lib: null, inst: null, ctx: null },
+  listenStream: null, listenSource: null, listenProcessor: null,
+  listening:   false,
+  decodedUPI:  '',
+};
+
+// ═══════════════════════════════════════════════════════
+//  BOOT
+// ═══════════════════════════════════════════════════════
+async function init() {
+  renderHandleTable();
+  loadSettings();
+  updateBadge();
+  checkNotice();
+  setTimeout(() => _loadGGWave().catch(() => {}), 800);
+}
+
+function renderHandleTable() {
+  const el = document.getElementById('handle-table');
+  Object.entries(HC).forEach(([code, handle]) => {
+    el.innerHTML += `<div><span class="upi-accent font-mono">${code}</span> = @${handle}</div>`;
+  });
+}
+
+function loadSettings() {
+  try {
+    const raw = localStorage.getItem('upisb1');
+    if (!raw) return;
+    const saved = JSON.parse(raw);
+    Object.assign(S.settings, saved);
+    document.getElementById('s-upi').value  = saved.upi  || '';
+    document.getElementById('home-upi').value = saved.upi || '';
+    if (saved.proto) setProto(saved.proto);
+    onUpiInput();
+  } catch (_) {}
+}
+
+function checkNotice() {
+  document.getElementById('notice-cfg').classList.toggle('hidden', !!S.settings.upi);
+}
+
+function updateBadge() {
+  const el  = document.getElementById('upi-badge');
+  const id  = S.settings.upi;
+  if (id) {
+    const comp = compressUPI(id);
+    el.textContent = `${id} → broadcasts as "${comp}"`;
+  } else {
+    el.textContent = 'No UPI ID configured';
+  }
+}
+
+function onUpiInput() {
+  const val  = document.getElementById('home-upi').value.trim();
+  const hint = document.getElementById('home-upi-hint');
+  if (!val || !val.includes('@')) { hint.textContent = ''; return; }
+  const comp = compressUPI(val);
+  hint.textContent = comp !== val
+    ? `Broadcasts as "${comp}" (${comp.length} chars)`
+    : `Broadcasts as "${comp}" — handle not in compression table`;
+}
+
+// ═══════════════════════════════════════════════════════
+//  NAVIGATION
+// ═══════════════════════════════════════════════════════
+function showScreen(name) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById('screen-' + name).classList.add('active');
+  S.screen = name;
+}
+
+// ═══════════════════════════════════════════════════════
+//  SETTINGS
+// ═══════════════════════════════════════════════════════
+function saveSettings() {
+  S.settings.upi   = document.getElementById('s-upi').value.trim().toLowerCase();
+  S.settings.proto = S.proto;
+  localStorage.setItem('upisb1', JSON.stringify(S.settings));
+  // Sync home field
+  document.getElementById('home-upi').value = S.settings.upi;
+  updateBadge();
+  checkNotice();
+  onUpiInput();
+  setResult('success', '✓ Saved');
+  setTimeout(() => showScreen('home'), 700);
+}
+
+function clearSettings() {
+  if (!confirm('Clear all saved settings?')) return;
+  localStorage.removeItem('upisb1');
+  S.settings = { upi: '', proto: 'audible' };
+  document.getElementById('s-upi').value = '';
+  document.getElementById('home-upi').value = '';
+  updateBadge(); checkNotice();
+  setResult('neutral', 'Settings cleared');
+}
+
+function setResult(type, msg) {
+  const el = document.getElementById('s-result');
+  el.className = 'p-3 rounded-xl text-sm mb-4 border';
+  if (type === 'success') el.className += ' bg-green-950/40 border-green-800/40 text-green-400';
+  else if (type === 'err') el.className += ' bg-red-950/40 border-red-800/40 text-red-400';
+  else el.className += ' bg-gray-900 border-gray-800 text-gray-500';
+  el.textContent = msg;
+  el.classList.remove('hidden');
+}
+
+// ═══════════════════════════════════════════════════════
+//  GGWAVE
+// ═══════════════════════════════════════════════════════
+async function _loadGGWave() {
+  if (S.gg.lib) return;
+  await new Promise((resolve, reject) => {
+    if (typeof window.ggwave_factory === 'function') { resolve(); return; }
+    if (document.querySelector('script[data-gg]')) { resolve(); return; }
+    const sc = document.createElement('script');
+    sc.src = './lib/ggwave.js';
+    sc.dataset.gg = '1';
+    sc.onload  = resolve;
+    sc.onerror = () => reject(new Error('Failed to load ggwave. Is the dev server running? (npx serve)'));
+    document.head.appendChild(sc);
+  });
+  if (typeof window.ggwave_factory !== 'function')
+    throw new Error('ggwave_factory not defined after script load.');
+  S.gg.lib = await window.ggwave_factory();
+  S.gg.lib.disableLog();
+}
+
+async function ensureAudio() {
+  if (!S.gg.ctx) S.gg.ctx = new (window.AudioContext || window.webkitAudioContext)({ sampleRate: 48000 });
+  if (S.gg.ctx.state === 'suspended') await S.gg.ctx.resume();
+  await _loadGGWave();
+  if (!S.gg.inst) {
+    const p = S.gg.lib.getDefaultParameters();
+    p.sampleRateInp = S.gg.ctx.sampleRate;
+    p.sampleRateOut = S.gg.ctx.sampleRate;
+    p.soundMarkerThreshold = 3;
+    p.operatingMode = S.gg.lib.GGWAVE_OPERATING_MODE_RX_AND_TX;
+    S.gg.inst = S.gg.lib.init(p);
+  }
+}
+
+function getProtoId() {
+  const P = S.gg.lib.ProtocolId;
+  if (S.proto === 'ultrasonic') return P?.GGWAVE_PROTOCOL_ULTRASOUND_FASTEST ?? 5;
+  return P?.GGWAVE_PROTOCOL_AUDIBLE_FASTEST ?? 2;
+}
+
+// ═══════════════════════════════════════════════════════
+//  BROADCAST
+// ═══════════════════════════════════════════════════════
+async function startBroadcast() {
+  clearErr('home-err');
+  const rawId = document.getElementById('home-upi').value.trim().toLowerCase();
+  if (!rawId || !rawId.includes('@')) {
+    showErr('home-err', 'Enter a valid UPI ID (e.g. yourname@okaxis).');
+    return;
+  }
+  S.upiId = rawId;
+
+  // Render broadcast screen
+  document.getElementById('bc-upi-label').textContent = rawId;
+  renderQR(rawId);
+  document.getElementById('upi-deeplink-str').textContent = upiDeepLink(rawId);
+  setBcState('idle');
+  document.getElementById('bc-payload-wrap').classList.add('hidden');
+
+  showScreen('broadcast');
+
+  // Auto-start loop
+  await runBroadcastLoop();
+}
+
+async function runBroadcastLoop() {
+  if (S.looping) return;
+  S.looping = true; S.loopCount = 0;
+  document.getElementById('btn-bc').textContent = '⏹ Stop';
+  setBcState('active');
+
+  try {
+    await ensureAudio();
+    const payload = compressUPI(S.upiId);
+    const vol = S.proto === 'ultrasonic' ? 50 : 15;
+    const wave = S.gg.lib.encode(S.gg.inst, payload, getProtoId(), vol);
+    if (!wave || wave.length === 0) throw new Error('Encoding failed — payload may be too long.');
+    S.lastWave = wave; S.lastPayload = payload;
+    showPayloadInfo(payload);
+
+    while (S.looping) {
+      await playWave(wave);
+      if (!S.looping) break;
+      S.loopCount++;
+      document.getElementById('bc-loop-count').textContent =
+        `Cycle ${S.loopCount} — listener can join any time`;
+      await new Promise(r => setTimeout(r, 350));
+    }
+  } catch (e) {
+    S.looping = false;
+    setBcState('err', e.message);
+    document.getElementById('btn-bc').textContent = '📡 Broadcast Loop';
+    return;
+  }
+  document.getElementById('btn-bc').textContent = '📡 Broadcast Loop';
+}
+
+function stopBroadcast() {
+  S.looping = false;
+  if (S.currentSrc) { try { S.currentSrc.stop(); } catch (_) {} S.currentSrc = null; }
+  document.getElementById('rings').classList.add('hidden');
+  setBcState('done');
+  document.getElementById('btn-bc').textContent = '📡 Broadcast Loop';
+}
+
+function toggleBroadcast() {
+  if (S.looping) { stopBroadcast(); return; }
+  runBroadcastLoop();
+}
+
+function cancelBroadcast() { stopBroadcast(); showScreen('home'); }
+
+function toggleProto() { setProto(S.proto === 'audible' ? 'ultrasonic' : 'audible'); }
+
+function setProto(p) {
+  S.proto = p;
+  // Settings screen pills
+  const sil = document.getElementById('proto-silent');
+  const aud = document.getElementById('proto-audible');
+  if (sil && aud) {
+    sil.className  = 'mpill flex-1 text-center ' + (p === 'audible'    ? 'on' : 'off');
+    aud.className  = 'mpill flex-1 text-center ' + (p === 'ultrasonic' ? 'on' : 'off');
+  }
+  // Broadcast screen toggle button
+  const btn = document.getElementById('btn-proto');
+  if (btn) btn.innerHTML = p === 'ultrasonic' ? '🔇<br>Silent' : '🔊<br>Loud';
+  if (S.looping) { stopBroadcast(); setTimeout(() => runBroadcastLoop(), 100); }
+}
+
+function playWave(wave) {
+  return new Promise(resolve => {
+    const ctx = S.gg.ctx;
+    const floatWave = new Float32Array(wave.buffer, wave.byteOffset, wave.byteLength / 4);
+    const buf = ctx.createBuffer(1, floatWave.length, ctx.sampleRate);
+    buf.getChannelData(0).set(floatWave);
+    const src = ctx.createBufferSource();
+    src.buffer = buf;
+    S.currentSrc = src;
+
+    if (S.proto === 'ultrasonic') {
+      const hpf = ctx.createBiquadFilter();
+      hpf.type = 'highpass';
+      hpf.frequency.value = 17000;
+      hpf.Q.value = 1.4;
+      src.connect(hpf);
+      hpf.connect(ctx.destination);
+    } else {
+      src.connect(ctx.destination);
+    }
+
+    src.onended = () => {
+      S.currentSrc = null;
+      document.getElementById('rings').classList.add('hidden');
+      resolve();
+    };
+    document.getElementById('rings').classList.remove('hidden');
+    src.start(0);
+  });
+}
+
+function showPayloadInfo(payload) {
+  document.getElementById('bc-payload').textContent = payload;
+  document.getElementById('bc-payload-len').textContent = payload.length;
+  document.getElementById('bc-payload-wrap').classList.remove('hidden');
+}
+
+function setBcState(s, msg) {
+  ['bc-idle','bc-active','bc-done','bc-err'].forEach(id => document.getElementById(id).classList.add('hidden'));
+  if (s === 'idle')   document.getElementById('bc-idle').classList.remove('hidden');
+  if (s === 'active') document.getElementById('bc-active').classList.remove('hidden');
+  if (s === 'done')   document.getElementById('bc-done').classList.remove('hidden');
+  if (s === 'err') {
+    const el = document.getElementById('bc-err');
+    el.textContent = '⚠️ ' + (msg || 'Audio error');
+    el.classList.remove('hidden');
+  }
+}
+
+// ═══════════════════════════════════════════════════════
+//  WAV DOWNLOAD (for ESP32 SD card)
+// ═══════════════════════════════════════════════════════
+async function downloadWav() {
+  const btn      = document.getElementById('btn-dl');
+  const statusEl = document.getElementById('dl-status');
+  btn.disabled = true;
+  statusEl.textContent = '⏳ Generating…';
+  statusEl.className   = 'text-xs text-center mt-2 text-gray-500';
+  statusEl.classList.remove('hidden');
+
+  try {
+    await _loadGGWave();
+
+    const payload = compressUPI(S.upiId);
+    const SR      = 48000;
+
+    // Create a standalone ggwave instance at fixed 48 kHz (no AudioContext needed)
+    const p = S.gg.lib.getDefaultParameters();
+    p.sampleRateInp = SR;
+    p.sampleRateOut = SR;
+    p.operatingMode = S.gg.lib.GGWAVE_OPERATING_MODE_TX;
+    const inst = S.gg.lib.init(p);
+
+    // Use audible protocol for SD card playback through physical speaker
+    const protoId = S.gg.lib.ProtocolId?.GGWAVE_PROTOCOL_AUDIBLE_FASTEST ?? 2;
+    const wave    = S.gg.lib.encode(inst, payload, protoId, 15);
+    S.gg.lib.free(inst);
+
+    if (!wave || wave.length === 0) throw new Error('Encoding produced empty output.');
+
+    const floats  = new Float32Array(wave.buffer, wave.byteOffset, wave.byteLength / 4);
+    const wavBuf  = encodeWAV(floats, SR);
+    triggerDownload(wavBuf, 'upi.wav');
+
+    statusEl.textContent = `✓ Downloaded! Rename to 0001.wav on the SD card.`;
+    statusEl.className   = 'text-xs text-center mt-2 text-green-500';
+  } catch (e) {
+    statusEl.textContent = '⚠️ ' + e.message;
+    statusEl.className   = 'text-xs text-center mt-2 text-red-400';
+  } finally {
+    btn.disabled = false;
+  }
+}
+
+function encodeWAV(samples, sampleRate) {
+  const numCh      = 1;
+  const bitsPerSmp = 16;
+  const bytesPerSmp = bitsPerSmp / 8;
+  const dataBytes  = samples.length * bytesPerSmp;
+  const buf        = new ArrayBuffer(44 + dataBytes);
+  const v          = new DataView(buf);
+
+  function ws(offset, str) {
+    for (let i = 0; i < str.length; i++) v.setUint8(offset + i, str.charCodeAt(i));
+  }
+  ws(0,  'RIFF');
+  v.setUint32( 4, 36 + dataBytes, true);
+  ws(8,  'WAVE');
+  ws(12, 'fmt ');
+  v.setUint32(16, 16, true);                              // chunk size
+  v.setUint16(20, 1,  true);                              // PCM
+  v.setUint16(22, numCh, true);
+  v.setUint32(24, sampleRate, true);
+  v.setUint32(28, sampleRate * numCh * bytesPerSmp, true); // byte rate
+  v.setUint16(32, numCh * bytesPerSmp, true);             // block align
+  v.setUint16(34, bitsPerSmp, true);
+  ws(36, 'data');
+  v.setUint32(40, dataBytes, true);
+
+  for (let i = 0; i < samples.length; i++) {
+    const s = Math.max(-1, Math.min(1, samples[i]));
+    v.setInt16(44 + i * 2, s < 0 ? s * 0x8000 : s * 0x7FFF, true);
+  }
+  return buf;
+}
+
+function triggerDownload(arrayBuffer, filename) {
+  const blob = new Blob([arrayBuffer], { type: 'audio/wav' });
+  const url  = URL.createObjectURL(blob);
+  const a    = document.createElement('a');
+  a.href = url; a.download = filename;
+  document.body.appendChild(a); a.click();
+  setTimeout(() => { document.body.removeChild(a); URL.revokeObjectURL(url); }, 200);
+}
+
+// ═══════════════════════════════════════════════════════
+//  QR
+// ═══════════════════════════════════════════════════════
+function renderQR(upiId) {
+  const el = document.getElementById('qrcode');
+  el.innerHTML = '';
+  const link = upiDeepLink(upiId);
+  const sz   = Math.min(268, window.innerWidth - 80);
+  new QRCode(el, {
+    text: link, width: sz, height: sz,
+    colorDark: '#000000', colorLight: '#ffffff',
+    correctLevel: QRCode.CorrectLevel.L,
+  });
+}
+
+// ═══════════════════════════════════════════════════════
+//  LISTEN
+// ═══════════════════════════════════════════════════════
+async function startListening() {
+  document.getElementById('listen-err').classList.add('hidden');
+  try {
+    await ensureAudio();
+    const stream = await navigator.mediaDevices.getUserMedia({
+      audio: {
+        echoCancellation: false,
+        autoGainControl:  false,
+        noiseSuppression: false,
+        channelCount:     1,
+        sampleRate:       48000,
+      },
+      video: false,
+    });
+    S.listenStream    = stream;
+    const src  = S.gg.ctx.createMediaStreamSource(stream);
+    const proc = S.gg.ctx.createScriptProcessor(1024, 1, 1);
+    S.listenSource    = src;
+    S.listenProcessor = proc;
+
+    proc.onaudioprocess = (e) => {
+      if (!S.listening) return;
+      try {
+        const res = S.gg.lib.decode(
+          S.gg.inst,
+          typedView(new Float32Array(e.inputBuffer.getChannelData(0)), Int8Array)
+        );
+        if (res && res.length > 0) {
+          const text = new TextDecoder().decode(res).trim();
+          if (text) onDecoded(text);
+        }
+      } catch (_) {}
+    };
+
+    src.connect(proc);
+    proc.connect(S.gg.ctx.destination);
+    S.listening = true;
+
+    document.getElementById('listen-idle').classList.add('hidden');
+    document.getElementById('listen-active').classList.remove('hidden');
+    document.getElementById('listen-active').classList.add('flex');
+    document.getElementById('dec-wrap').classList.add('hidden');
+  } catch (e) {
+    const el = document.getElementById('listen-err');
+    el.classList.remove('hidden');
+    el.textContent = e.name === 'NotAllowedError'
+      ? 'Microphone access denied. Allow mic access in browser settings.'
+      : 'Error: ' + e.message;
+  }
+}
+
+function stopListening() {
+  S.listening = false;
+  if (S.listenProcessor) { S.listenProcessor.disconnect(); S.listenProcessor = null; }
+  if (S.listenSource)    { S.listenSource.disconnect();    S.listenSource    = null; }
+  if (S.listenStream)    { S.listenStream.getTracks().forEach(t => t.stop()); S.listenStream = null; }
+  document.getElementById('listen-idle').classList.remove('hidden');
+  document.getElementById('listen-active').classList.add('hidden');
+  document.getElementById('listen-active').classList.remove('flex');
+}
+
+function onDecoded(text) {
+  stopListening();
+
+  const wrap  = document.getElementById('dec-wrap');
+  const qrw   = document.getElementById('dec-qr-wrap');
+  const typeEl = document.getElementById('dec-type');
+  const errEl  = document.getElementById('dec-err');
+
+  wrap.classList.remove('hidden');
+  [qrw, errEl].forEach(el => el.classList.add('hidden'));
+
+  // Expand compressed handle if present
+  const fullId = expandUPI(text);
+  if (!fullId.includes('@')) {
+    typeEl.textContent = '⚠️ Unrecognised payload: ' + text;
+    errEl.textContent  = 'Not a valid UPI ID.';
+    errEl.classList.remove('hidden');
+    return;
+  }
+
+  S.decodedUPI = fullId;
+  typeEl.textContent = '✅ UPI ID received';
+
+  const link = upiDeepLink(fullId);
+  document.getElementById('dec-upi-display').textContent = fullId;
+  document.getElementById('dec-upi-link').textContent    = link;
+
+  // QR
+  const dqrEl = document.getElementById('dqr');
+  dqrEl.innerHTML = '';
+  new QRCode(dqrEl, {
+    text: link, width: 200, height: 200,
+    colorDark: '#000000', colorLight: '#ffffff',
+    correctLevel: QRCode.CorrectLevel.L,
+  });
+  qrw.classList.remove('hidden');
+
+  // Auto-open UPI app
+  openUPILink(link);
+}
+
+function openUPI() {
+  if (S.decodedUPI) openUPILink(upiDeepLink(S.decodedUPI));
+}
+
+function openUPILink(link) {
+  const a = document.createElement('a');
+  a.href = link; a.style.display = 'none';
+  document.body.appendChild(a); a.click();
+  setTimeout(() => document.body.removeChild(a), 200);
+}
+
+// ═══════════════════════════════════════════════════════
+//  UTILS
+// ═══════════════════════════════════════════════════════
+function typedView(src, Type) {
+  const b = new ArrayBuffer(src.byteLength);
+  new src.constructor(b).set(src);
+  return new Type(b);
+}
+
+function showErr(id, msg) { const e = document.getElementById(id); e.textContent = msg; e.classList.remove('hidden'); }
+function clearErr(id)     { document.getElementById(id).classList.add('hidden'); }
+
+function copyDeeplink(btn) {
+  const str = document.getElementById('upi-deeplink-str').textContent;
+  navigator.clipboard.writeText(str).then(() => {
+    btn.textContent = 'Copied!'; setTimeout(() => btn.textContent = 'Copy', 1500);
+  });
+}
+
+function copyDecoded(btn) {
+  navigator.clipboard.writeText(S.decodedUPI).then(() => {
+    btn.textContent = 'Copied!'; setTimeout(() => btn.textContent = 'Copy UPI ID', 1500);
+  });
+}
+
+document.addEventListener('DOMContentLoaded', init);
+</script>
+</body>
+</html>
